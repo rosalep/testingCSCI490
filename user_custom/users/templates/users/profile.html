@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Profile</title>
+</head>
+<body>
+    {% if user.is_authenticated %}
+    <div class="card" >
+        <div class="container">
+            <h2>{{user.username}}</h2>
+            {% if user.avatar %}  
+                <img src="{{ user.avatar.url }}" id="profile-picture" alt="User Avatar">
+            {% else %}
+            <img src="/media/default-avatar.png" id="profile-picture" alt="Default Avatar">
+            {% endif %}
+            <h3>{{user.email}}</h3>
+            <form type="submit" id="edit-profile" action="edit/">
+                <input type="submit" value="Edit Profile"/>
+            </form>
+        </div>
+    </div>
+    <div class="logout-container">
+        <form action="{% url 'user-logout' %}" method="post">
+            {% csrf_token %}
+            <button type="submit">Log Out</button>
+          </form>
+    </div>
+    {% else %}
+    <div class="login-required" id="login-to-draw">
+        <p>Oops! It seems that you do not have an account logged in. Please <a class="ml-2"
+            href="/login">login</a> or <a class="ml-2"
+            href="/signup">signup</a></p>
+      </div>
+    {% endif %}
+</body>
+</html>

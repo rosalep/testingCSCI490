@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <!-- rankings go here once there is enough data -->
+    {% if user.is_authenticated %}
+    <div>
+    <h1>Currently Open Games</h1>
+    {% for open_game in open_games %}
+    
+    <a href="game/game/{{open_game.game_id}}" id="joinTeam{{open_game.game_id}}">Game {{open_game.game_id}}</a>
+    <div id="joinGame{{open_game.game_id}}Message"></div>
+    {% endfor %}
+    </div>
+    {% else %}
+    <div class="login-required" id="login-to-draw">
+        <p>Oops! It seems that you are not logged in. If you would like to play, please <a class="ml-2"
+            href="/login">login</a> or <a class="ml-2"
+            href="/signup">signup</a></p>
+      </div>
+    {% endif %}
+    
+</body>
+</html>

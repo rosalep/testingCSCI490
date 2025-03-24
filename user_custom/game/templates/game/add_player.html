@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Add Player to {{ team.name }}</title>
+</head>
+<body>
+    <h1>Add Player to {{ team.name }}</h1>
+
+    {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                <li {% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        <label for="user_id">Select User:</label>
+        <!-- change to make current user add themselves not ANY user -->
+        <select name="user_id" id="user_id">
+            {% for user in users %}
+                <option value="{{ user.id }}">{{ user.username }}</option>
+            {% endfor %}
+        </select><br><br>
+        <button type="submit">Add Player</button>
+    </form>
+</body>
+</html>

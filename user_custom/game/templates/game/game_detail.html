@@ -1,0 +1,79 @@
+{% load static%}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+<h1>Game {{ game.game_id }}</h1>
+<p>Team 1: {{ game.team1.name }}</p>
+<p>Team 2: {{ game.team2.name }}</p>
+<p>First Team: {{ game.guessers.name }}</p>
+<p>Current Artist: {{ game.current_artist.player_import.username }}</p>
+<p>Current Word: {{ game.word_to_guess }}</p>
+<p>User: {{ users.username }} {{users.user_id}}</p>
+<p>Remaining Time: {{ remaining_time }}</p>
+
+<button id="joinTeam1">Join Team 1</button>
+<div id="joinTeam1Message"></div>
+
+<button id="joinTeam2">Join Team 2</button>
+<div id="joinTeam2Message"></div>
+
+<script>
+    document.addEventListener('click', function (event) {
+        if (event.target.id == 'joinTeam1') {
+            fetch('../add_player/{{game.team1.team_id}}/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'), // Get CSRF token from cookies
+                    'Content-Type': 'application/json' // Or 'application/x-www-form-urlencoded' if needed
+                }
+            }).then(response => response.json())
+            .then(data => {
+                document.getElementById('joinTeam1Message').textContent = data.message;
+                location.reload();
+            })
+            .catch(error => {
+                document.getElementById('joinTeam1Message').textContent = "An Error Occurred";
+            });
+        }
+    });
+    document.addEventListener('click', function (event) {
+        if (event.target.id == 'joinTeam2') {
+            fetch('../add_player/{{game.team2.team_id}}/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'), // Get CSRF token from cookies
+                    'Content-Type': 'application/json' // Or 'application/x-www-form-urlencoded' if needed
+                }
+            }).then(response => response.json())
+            .then(data => {
+                document.getElementById('joinTeam2Message').textContent = data.message;
+                location.reload();
+            })
+            .catch(error => {
+                document.getElementById('joinTeam2Message').textContent = 'An Error Occurred';
+            });
+        }
+    });
+    function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    // Does this cookie string begin with the name we want?
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+</script>
+</body>
+</html>
