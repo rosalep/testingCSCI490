@@ -1,0 +1,107 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="{% static 'users/style.css' %}">
+</head>
+
+<body>
+    {% if user.is_authenticated %}
+    <div id="navi" class="header">
+        <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/game/open_teams">Open Teams</a></li>
+            <li><a href="/game/create_team">Create a New Team</a></li>
+            <li><a href="/profile">Profile</a></li>
+            <li><a href="/logout">Logout</a></li>
+            <li id="greeting">Welcome, {{user.username}}</li>
+        </ul>
+    </div>
+    <div id="open-teams">
+        <h1>Currently Open Teams</h1>
+        {% for open_team in open_teams %}
+        <p>Team {{open_team.name}} <button id="joinTeam{{open_team.team_id}}">Join</button></p>
+        <div id="joinTeam{{open_team.team_id}}Message"></div>
+        {% endfor %}
+    </div>
+    {% if player.player_team is not None %}
+    <button id="leaveTeam{{player.player_team.team_id}}">Leave Team {{player.player_team.name}}</button>
+    <div id="leaveTeam{{player.player_team.team_id}}Message"></div>
+    {% else %}
+    <p>You are not currently on a team.</p>
+    {% endif%}
+
+
+    {% else %}
+    <div class="login-required" id="login-to-draw">
+        <p>Oops! It seems that you are not logged in. If you would like to play, please <a class="ml-2"
+                href="/login">login</a> or <a class="ml-2" href="/signup">signup</a></p>
+    </div>
+    {% endif %}
+    <script>
+        document.addEventListener('click', function (event) {
+            if (event.target.id && event.target.id.startsWith('joinTeam')) {
+                const teamId = event.target.id.replace('joinTeam', '');
+                fetch('../add_player/' + teamId + '/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),
+                        'Content-Type': 'application/json'
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('joinTeam' + teamId + 'Message').textContent = data.message;
+                        location.reload();
+                    })
+                    .catch(error => {
+                        console.error(error); 
+                        document.getElementById('joinTeam' + teamId + 'Message').textContent = "An Error Occurred";
+                    });
+            }
+        });
+        document.addEventListener('click', function (event) {
+            if (event.target.id && event.target.id.startsWith('leaveTeam')) {
+                const teamId = event.target.id.replace('leaveTeam', '');
+                fetch('../leave_team/' + teamId + '/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),
+                        'Content-Type': 'application/json'
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('leaveTeam' + teamId + 'Message').textContent = data.message;
+                        location.reload();
+                    })
+                    .catch(error => {
+                        // currently, error shows even when player is successfully removed
+                        console.error(error);
+                        document.getElementById('leaveTeam' + teamId + 'Message').textContent = "An Error Occurred";
+                    });
+            }
+        });
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+</body>
+
+</html>

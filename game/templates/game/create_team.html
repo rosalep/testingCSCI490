@@ -1,0 +1,29 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create New Teams</title>
+    <link rel="stylesheet" href="{% static 'users/style.css' %}">
+
+</head>
+<body>
+    <div id="navi" class="header">
+        <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/game/open_teams">Open Teams</a></li>
+            <li><a href="/game/create_team">Create a New Team</a></li>
+            <li><a href="/profile">Profile</a></li>
+            <li><a href="/logout">Logout</a></li>
+            <li id="greeting">Welcome, {{user.username}}</li>
+        </ul>
+    </div>
+    <h1>Create New Teams</h1>
+    <form method="post">
+        {% csrf_token %}
+        <label for="team_name">Team Name:</label><br>
+        <input type="text" name="team_name" id="team_name"><br><br>
+        <button type="submit">Create Team</button>
+    </form>
+    
+</body>
+</html>

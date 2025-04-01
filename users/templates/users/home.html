@@ -1,0 +1,35 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="{% static 'users/style.css' %}">
+</head>
+
+<body>
+    {% if user.is_authenticated %}
+    <div id="navi" class="header">
+        <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/game/open_teams">Open Teams</a></li>
+            <li><a href="/game/create_team">Create a New Team</a></li>
+            <li><a href="/profile">Profile</a></li>
+            <li><a href="/logout">Logout</a></li>
+            <li id="greeting">Welcome, {{user.username}}</li>
+        </ul>
+    </div>
+    <!-- rankings go here once there is enough data -->
+    <p>Here is where the rankings will go once teams and game are set up</p>
+    {% else %}
+    <div class="login-required" id="login-to-draw">
+        <p>Oops! It seems that you are not logged in. If you would like to play, please <a class="ml-2"
+            href="/login">login</a> or <a class="ml-2"
+            href="/signup">signup</a></p>
+      </div>
+    {% endif %}
+    
+</body>
+</html>

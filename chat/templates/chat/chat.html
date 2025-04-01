@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat and Canvas</title>
+</head>
+<body>
+    <h1>Chat and Canvas</h1>
+    <div id="chat-display"></div>
+    <input type="text" id="message-input">
+    <button id="send-button">Send</button>
+
+    <canvas id="drawing-canvas" width="500" height="300" style="border: 1px solid black;"></canvas>
+
+    <script>
+        function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    const csrftoken = getCookie('csrftoken');
+        const canvas = document.getElementById('drawing-canvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+
+        function fetchUpdates() {
+            fetch('/chat/updates/')
+                .then(response => response.json())
+                .then(data => {
+                    data.updates.forEach(update => {
+                        try{
+                            const parsedUpdate = JSON.parse(update);
+                            if (parsedUpdate.type === 'draw') {
+                                draw(parsedUpdate.x, parsedUpdate.y);
+                            } else {
+                                document.getElementById('chat-display').innerHTML += `<p>${update}</p>`;
+                            }
+                        } catch(e) {
+                            document.getElementById('chat-display').innerHTML += `<p>${update}</p>`;
+                        }
+                    });
+                });
+        }
+
+        setInterval(fetchUpdates, 1000); // Poll every 1 second
+
+        document.getElementById('send-button').addEventListener('click', function() {
+            const messageInput = document.getElementById('message-input');
+            const message = messageInput.value;
+            if (message) {
+                fetch('/chat/send/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken,},
+                    body: JSON.stringify({ type: 'message', message: message })
+                });
+                messageInput.value = '';
+            }
+        });
+
+        canvas.addEventListener('mousedown', function(e) {
+            isDrawing = true;
+            sendDraw(e.offsetX, e.offsetY);
+        });
+
+        canvas.addEventListener('mousemove', function(e) {
+            if (isDrawing) {
+                sendDraw(e.offsetX, e.offsetY);
+            }
+        });
+
+        canvas.addEventListener('mouseup', function() {
+            isDrawing = false;
+        });
+
+        canvas.addEventListener('mouseleave', function() {
+            isDrawing = false;
+        });
+
+        function sendDraw(x, y) {
+            fetch('/chat/send/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken,  },
+                body: JSON.stringify({ type: 'draw', data: JSON.stringify({type:'draw', x: x, y: y}) })
+            });
+            draw(x, y);
+        }
+
+        function draw(x, y) {
+            ctx.fillRect(x, y, 5, 5);
+        }
+    </script>
+</body>
+</html>
