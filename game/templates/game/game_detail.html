@@ -1,4 +1,4 @@
-<!-- {% load static%}
+{% load static%}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,64 +16,6 @@
 <p>User: {{ users.username }} {{users.user_id}}</p>
 <p>Remaining Time: {{ remaining_time }}</p>
 
-<button id="joinTeam1">Join Team 1</button>
-<div id="joinTeam1Message"></div>
 
-<button id="joinTeam2">Join Team 2</button>
-<div id="joinTeam2Message"></div>
-
-<script>
-    document.addEventListener('click', function (event) {
-        if (event.target.id == 'joinTeam1') {
-            fetch('../add_player/{{game.team1.team_id}}/', {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': getCookie('csrftoken'), // Get CSRF token from cookies
-                    'Content-Type': 'application/json' // Or 'application/x-www-form-urlencoded' if needed
-                }
-            }).then(response => response.json())
-            .then(data => {
-                document.getElementById('joinTeam1Message').textContent = data.message;
-                location.reload();
-            })
-            .catch(error => {
-                document.getElementById('joinTeam1Message').textContent = "An Error Occurred";
-            });
-        }
-    });
-    document.addEventListener('click', function (event) {
-        if (event.target.id == 'joinTeam2') {
-            fetch('../add_player/{{game.team2.team_id}}/', {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': getCookie('csrftoken'), // Get CSRF token from cookies
-                    'Content-Type': 'application/json' // Or 'application/x-www-form-urlencoded' if needed
-                }
-            }).then(response => response.json())
-            .then(data => {
-                document.getElementById('joinTeam2Message').textContent = data.message;
-                location.reload();
-            })
-            .catch(error => {
-                document.getElementById('joinTeam2Message').textContent = 'An Error Occurred';
-            });
-        }
-    });
-    function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    // Does this cookie string begin with the name we want?
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
-                }
-            }
-            return cookieValue;
-        }
-</script>
 </body>
-</html> -->
+</html>

@@ -17,6 +17,10 @@
             <li id="greeting">Welcome, {{user.username}}</li>
         </ul>
     </div>
+    {% if message %}
+    <p>{{message}}</p>
+    {% endif %}
+    {% if player.player_team is None %}
     <h1>Create New Teams</h1>
     <form method="post">
         {% csrf_token %}
@@ -25,5 +29,6 @@
         <button type="submit">Create Team</button>
     </form>
     
+    {% endif %}
 </body>
 </html>
