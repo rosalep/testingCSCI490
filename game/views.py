@@ -7,56 +7,90 @@ from django.http import JsonResponse
 from django.core.exceptions import ValidationError
 from channels.db import database_sync_to_async
 from django.contrib.auth.decorators import login_required
-
+import random 
 # Create your views here.
+
+# group two teams together to form a game
+# NOT used for players to join a team
+def join_teams(request):
+    if request.method == 'POST':
+        return render(request, 'game/join_teams.html')
+
+# make a new team instance
 def create_team(request):
+    user = request.user
+    player,created=Player.objects.get_or_create(player_import=user)
+    if player.player_team is not None:
+        return render(request, 'game/create_team.html',  {'player': player, 'message': f'Part of a Team {player.player_team.name} already, cannot make a new team.'})
     if request.method=='POST':
         # get names
         team_name = request.POST['team_name']
-        team = Team.objects.create(name=team_name)
+        team = Team.objects.create(name=team_name, creator=player)
+        # automatically add creator to team
+        # handles saving and checking if a team is already assigned
+        Team.objects.add_player(team, player)
         # send user to pick a team
-        return render(request, 'game/open_teams.html') 
+        return render(request, 'game/open_teams.html', {'player': player}) 
     return render(request, 'game/create_team.html')
 
-# def create_game(request):
-#     if request.method == 'POST':
-#         # get names
-#         # team1_name = request.POST['team1_name']
-#         # team2_name = request.POST['team2_name']
-#         # # create teams
-#         # team1 = Team.objects.create(name=team1_name)
-#         # team2 = Team.objects.create(name=team2_name)
-#         # dont start timer yet
-#         timer = Timer.objects.create()
-#         game = Game.objects.create(team1=team1, team2=team2, game_timer=timer)
-        
-#         # need to get all players in teams first
-#         Game.objects.start_game(game)
-#         return redirect('game_detail', game_id=game.game_id)
-#     return render(request, 'game/create_game.html')
+# contains the canvas, chat, and other game info
+# must keep track of score, rounds, artists, time remaining, and word 
+# def start_game(request, game_id):
 
-# def game_detail(request, game_id):
-#     game = get_object_or_404(Game, game_id=game_id)
-#     user = request.user
-#     return render(request, 'game/game_detail.html', {'game': game,'users': user, 'remaining_time': game.game_timer.get_remaining_time()})
+# get list of all full teams
+# randomly assigned each team to a game
+# create a game and display a button to route players to their games page
+def create_game(request):
+    if request.method =='POST':
+        user = request.user
+        player = Player.objects.get(player_import=user)
 
+        teams = Team.objects.all()    
+        # full_teams must be even for this to work
+        full_teams = [team for team in teams if team.is_full == True]
+        if len(full_teams) >= 2:
+            team1 = random.choice(full_teams)
+            full_teams.remove(team1)
+            team2 = random.choice(full_teams)
+            full_teams.remove(team2)
+            timer = Timer.objects.create()
+            game = Game.objects.create(team1=team1, team2=team2, game_timer=timer)
+            # only redirect to the game details if player is part of the game
+            if player.player_team == team1 or player.player_team == team2:
+                return redirect('game_detail', game_id=game.game_id)
+            else:
+                return redirect('game/create_game.html', {'message': 'Please wait for your team to be assigned a game.'})
+        else:
+            return render(request, 'game/create_game.html', {'message': 'Not enough teams to make a game, please wait for more players to join'})
+    return render(request, 'game/create_game.html')
+
+def game_detail(request, game_id):
+    game = get_object_or_404(Game, game_id=game_id)
+    user = request.user
+    return render(request, 'game/game_detail.html', {'game': game,'users': user, 'remaining_time': game.game_timer.get_remaining_time()})
+
+# show all open teams
+# allows player to join a team or leave a team
 def open_teams(request):
     user = request.user
-    player = (Player.objects.get)(player_import=user)
-    teams = Team.objects.all()
+    player = Player.objects.get(player_import=user)
+    teams = Team.objects.all()    
     open_teams = [team for team in teams if team.is_full == False]
     return render(request, 'game/open_teams.html', {'open_teams': open_teams, 'player':player})
 
+# logic for leaving a team
+# if creator leave the team, the team is deleted
 @login_required
-async def leave_team(request, team_id):
-    team = await sync_to_async(Team.objects.get)(team_id=team_id)
+def leave_team(request, team_id):
+    team = Team.objects.get(team_id=team_id)
     if request.method == 'POST':
         try:
-            player = await sync_to_async(Player.objects.get)(player_import=request.user, player_team=team)
+            player =  Player.objects.get(player_import=request.user, player_team=team)
+            if team.creator==player:
+                team.delete() # team needs to have a creator
             player.player_team = None
-            await sync_to_async(player.save)() 
-            # return to open teams, some issue with this
-            return await sync_to_async(open_teams)(request)
+            player.save() 
+            return open_teams(request)
         except Player.DoesNotExist:
             return JsonResponse({'message': 'You are not on this team.'}, status=400)
         except Exception as e:
@@ -69,7 +103,6 @@ def get_player(user):
     return player
 
 async def add_player(request, team_id):
-    # team = await sync_to_async(get_object_or_404)(Team, team_id=team_id)
     team = await sync_to_async(Team.objects.get)(team_id=team_id)
     if request.method == 'POST':
         # makes or creates a player 
@@ -85,21 +118,9 @@ async def add_player(request, team_id):
             return JsonResponse({'message': f'An unexpected error occured: {str(e)}'}, status=500)
     return JsonResponse({'message': 'Invalid request'}, status=400)
 
-  
 def next_round(request, game_id):
     game = get_object_or_404(Game, game_id=game_id)
     Game.objects.end_round(game)
     game.game_timer = Timer.objects.create()
     Game.objects.start_round(game)
     return redirect('game_detail', game_id=game.game_id)
-
-def switch_teams(request, game_id):
-    game = get_object_or_404(Game, game_id=game_id)
-    Game.objects.end_round(game)
-    game.game_timer = Timer.objects.create()
-    Game.objects.start_round(game)
-    return redirect('game_detail', game_id=game.game_id)
-
-# displays game timer, and everything in game model
-def game_page(request):
-    return render(request, 'game/game.py')

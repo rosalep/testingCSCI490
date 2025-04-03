@@ -5,19 +5,9 @@
 </head>
 <body>
     <h1>Create a New Game</h1>
-    <!-- for teams in team -->
-    <!-- show all open teams -->
-    <form method="post">
-        {% csrf_token %}
-
-        <label for="team1_name">Team 1 Name:</label><br>
-        <input type="text" name="team1_name" id="team1_name"><br><br>
-
-        <label for="team2_name">Team 2 Name:</label><br>
-        <input type="text" name="team2_name" id="team2_name"><br><br>
-
-        <button type="submit">Create Game</button>
-    </form>
+    {% if message %}
+    <p>{{message}}</p>
+    {% endif %}
     
 </body>
 </html>

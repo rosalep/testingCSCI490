@@ -38,6 +38,8 @@ class Team(models.Model):
     name = models.CharField(max_length=30, unique=True)
     max_players = models.IntegerField(default=2) 
     score = models.IntegerField(null=True, default=0)
+    # will be the one who names team and decides what game to join
+    creator = models.ForeignKey(Player, on_delete=models.CASCADE, null=True, blank=True, related_name='team_creator')
     # manager handles logic
     objects = TeamManager() 
 
@@ -147,7 +149,8 @@ class Game(models.Model):
     team1 = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True, blank=True, related_name='game_team1')
     team2 = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True, blank=True, related_name='game_team2')
     guessers = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True, blank=True, related_name='game_guessers')
-    
+    # to prevent certain actions after a game starts
+    is_active = models.BooleanField(default=False)
     game_timer = models.OneToOneField(Timer, on_delete=models.CASCADE)
     rounds = models.IntegerField(null=True, default=0)
     max_rounds = models.IntegerField(null=True, default=4)
