@@ -13,10 +13,6 @@ def normalize_email(email): # make everything after @ lowercase
         return email.strip()
     return '@'.join([email_name, domain_part.lower()])
 
-
-
-
-
 class CustomUserManager(models.Manager):
     def create_user(self, username, email, password, **extra_fields):
         if not username:
@@ -88,17 +84,17 @@ class CustomUser(models.Model):
         if bcrypt.checkpw(input_bytes, hash):
             return True
         return False
-        
+    
 
-class Profile(models.Model):
-    user=models.OneToOneField(CustomUser,on_delete=models.CASCADE) # user deleted, profile deleted
-    bio = models.TextField(default='Hello, world!')
+# class Profile(models.Model):
+#     user=models.OneToOneField(CustomUser,on_delete=models.CASCADE) # user deleted, profile deleted
+#     bio = models.TextField(default='Hello, world!')
      
-    def __str__(self):
-        return str(self.user)
+#     def __str__(self):
+#         return str(self.user)
 
-def make_profile(sender,instance,created,**kwargs):
-    if created:
-        Profile.objects.create(user=instance)
+# def make_profile(sender,instance,created,**kwargs):
+#     if created:
+#         Profile.objects.create(user=instance)
         
-post_save.connect(make_profile,sender=CustomUser)
+# post_save.connect(make_profile,sender=CustomUser)

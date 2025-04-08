@@ -8,8 +8,8 @@
     <title>Document</title>
     <link rel="stylesheet" href="{% static 'users/style.css' %}">
 </head>
-
 <body>
+
     {% if user.is_authenticated %}
     <div id="navi" class="header">
         <ul>
@@ -21,16 +21,22 @@
             <li id="greeting">Welcome, {{user.username}}</li>
         </ul>
     </div>
+
     <div id="open-teams">
         <h1>Currently Open Teams</h1>
         {% for open_team in open_teams %}
         <p>Team {{open_team.name}} <button id="joinTeam{{open_team.team_id}}">Join</button></p>
+
         <div id="joinTeam{{open_team.team_id}}Message"></div>
         {% endfor %}
     </div>
     {% if player.player_team is not None %}
     <button id="leaveTeam{{player.player_team.team_id}}">Leave Team {{player.player_team.name}}</button>
     <div id="leaveTeam{{player.player_team.team_id}}Message"></div>
+    {%if player.player_team.is_full%}
+    <button id="createGame">Create Game</button>
+    <div id="createGameMessage"></div>
+    {%endif%}
     {% else %}
     <p>You are not currently on a team.</p>
     {% endif%}
@@ -42,7 +48,12 @@
                 href="/login">login</a> or <a class="ml-2" href="/signup">signup</a></p>
     </div>
     {% endif %}
+    {%if message %}
+    <h1>{{message}}</h1>
+    {%endif%}
     <script>
+
+
         document.addEventListener('click', function (event) {
             if (event.target.id && event.target.id.startsWith('joinTeam')) {
                 const teamId = event.target.id.replace('joinTeam', '');
@@ -59,11 +70,38 @@
                         location.reload();
                     })
                     .catch(error => {
-                        console.error(error); 
+                        console.error(error);
                         document.getElementById('joinTeam' + teamId + 'Message').textContent = "An Error Occurred";
                     });
             }
         });
+        document.addEventListener('click', function (event) {
+
+            if (event.target.id == 'createGame') {
+                fetch('../create/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),
+                    }
+                })
+                    .then(response => {
+                        if (response.ok) {
+                            console.log("Response OK");
+                            window.location.href = response.url;
+                        } else {
+                            return response.text().then(errorMessage => {
+                                document.getElementById('createGameMessage').textContent = "oops" || "An error occurred on the server.";
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error(error);
+                        document.getElementById('createGameMessage').textContent = "Network Error";
+                    });
+            }
+        });
+
+
         document.addEventListener('click', function (event) {
             if (event.target.id && event.target.id.startsWith('leaveTeam')) {
                 const teamId = event.target.id.replace('leaveTeam', '');
@@ -80,7 +118,6 @@
                         location.reload();
                     })
                     .catch(error => {
-                        // currently, error shows even when player is successfully removed
                         console.error(error);
                         document.getElementById('leaveTeam' + teamId + 'Message').textContent = "An Error Occurred";
                     });
@@ -101,6 +138,7 @@
             }
             return cookieValue;
         }
+
     </script>
 </body>
 

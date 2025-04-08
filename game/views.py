@@ -19,7 +19,7 @@ def join_teams(request):
 # make a new team instance
 def create_team(request):
     user = request.user
-    player,created=Player.objects.get_or_create(player_import=user)
+    player,created = Player.objects.get_or_create(player_import=user)
     if player.player_team is not None:
         return render(request, 'game/create_team.html',  {'player': player, 'message': f'Part of a Team {player.player_team.name} already, cannot make a new team.'})
     if request.method=='POST':
@@ -41,6 +41,9 @@ def create_team(request):
 # randomly assigned each team to a game
 # create a game and display a button to route players to their games page
 def create_game(request):
+    print("create_game view executed")
+    # return render(request, 'game/open_teams.html', {'message': 'DEBUG MESSAGE'})
+
     if request.method =='POST':
         user = request.user
         player = Player.objects.get(player_import=user)
@@ -57,27 +60,36 @@ def create_game(request):
             game = Game.objects.create(team1=team1, team2=team2, game_timer=timer)
             # only redirect to the game details if player is part of the game
             if player.player_team == team1 or player.player_team == team2:
+                print("game_detail")
                 return redirect('game_detail', game_id=game.game_id)
             else:
-                return redirect('game/create_game.html', {'message': 'Please wait for your team to be assigned a game.'})
+                print("not on team")
+                return render(request, 'game/open_teams.html', {'message': 'Please wait for your team to be assigned a game.'})
         else:
-            return render(request, 'game/create_game.html', {'message': 'Not enough teams to make a game, please wait for more players to join'})
-    return render(request, 'game/create_game.html')
+            print("not enmopuigh for game")
+            return render(request, 'game/open_teams.html', {'message': 'Not enough teams to make a game, please wait for more players to join'})
+    print("outside")
+    return render(request, 'game/open_teams.html', {'message': 'whats goos'})
 
 def game_detail(request, game_id):
     game = get_object_or_404(Game, game_id=game_id)
     user = request.user
+    # prevents game from being restarted
+    if game.is_active == False:
+        Game.objects.start_game(game)
+    if game.game_timer.get_remaining_time==0:
+        Game.objects.next_round(game)
     return render(request, 'game/game_detail.html', {'game': game,'users': user, 'remaining_time': game.game_timer.get_remaining_time()})
 
 # show all open teams
 # allows player to join a team or leave a team
 def open_teams(request):
+    # if request.method =='POST':
     user = request.user
     player = Player.objects.get(player_import=user)
     teams = Team.objects.all()    
     open_teams = [team for team in teams if team.is_full == False]
     return render(request, 'game/open_teams.html', {'open_teams': open_teams, 'player':player})
-
 # logic for leaving a team
 # if creator leave the team, the team is deleted
 @login_required

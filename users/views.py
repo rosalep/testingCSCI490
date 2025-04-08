@@ -6,7 +6,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required 
 from .models import CustomUser, hash_password
-from game.models import Team, TeamManager, Game, GameManager
+from game.models import Team, TeamManager, Game, GameManager, Player
 from django.contrib.auth.forms import PasswordChangeForm
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
@@ -43,6 +43,8 @@ def signup(request):
             # Use the CustomUserManager to create the user
             user = CustomUser.objects.create_user(username=username, email=email, password=password)
             login(request, user)
+            # automatically crete a PLayer when CustomUser created        
+            Player.objects.create(player_import=user)
             return redirect('user-profile')
         except ValidationError as e:
             return render(request, 'users/signup.html', {'form': {'errors': str(e)}})

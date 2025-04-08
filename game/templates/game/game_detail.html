@@ -5,8 +5,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <link rel="stylesheet" href="{% static 'game/style.css' %}">
 </head>
 <body>
+    <script type="text/javascript" src="{% static 'game/drawing.js' %}"></script>
+    <div id="navi" class="header">
+        <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/game/open_teams">Open Teams</a></li>
+            <li><a href="/game/create_team">Create a New Team</a></li>
+            <li><a href="/profile">Profile</a></li>
+            <li><a href="/logout">Logout</a></li>
+            <li id="greeting">Welcome, {{user.username}}</li>
+        </ul>
+    </div>
 <h1>Game {{ game.game_id }}</h1>
 <p>Team 1: {{ game.team1.name }}</p>
 <p>Team 2: {{ game.team2.name }}</p>
@@ -14,8 +26,34 @@
 <p>Current Artist: {{ game.current_artist.player_import.username }}</p>
 <p>Current Word: {{ game.word_to_guess }}</p>
 <p>User: {{ users.username }} {{users.user_id}}</p>
-<p>Remaining Time: {{ remaining_time }}</p>
+<p>Current Round: {{ game.rounds }} of out {{game.max_rounds}}</p>
+<p >Remaining Time: {{ remaining_time }}</p>
 
+<canvas id="active-canvas" width="1000px" height="500px" style="border:1px solid #000000;text-align: center;">
+</canvas>
+{% if game.current_artist.player_import == users %}
+<div id="tools-canvas-container">
+
+    <label for="myRange">Change Size</label>
+    <input type="range" min="1" max="100" value="5" class="slider" id="myRange">
+     
+  <button id="eraser-canvas" class="tools-canvas" type="button">Eraser</button>
+  <button id="pencil-canvas" class="tools-canvas" type="button">Pencil</button>
+  <!-- <button id="bucket-canvas" class="tools-canvas" type="button" onclick="fill=true;">Bucket</button> -->
+  <label for="favcolor">Change Color</label>
+  <input type="color" id="color-canvas" name="favcolor" value="#000000">
+  <button id="clear-canvas" class="tools-canvas" type="button">Clear Canvas</button>
+</div>
+{% endif %}
+<!-- <div class="chat__item__container" id="id_chat_item_container" style="font-size: 20px">
+  <br />
+
+  <input type="text" id="id_guess_send_input" />
+  <button type="submit" id="id_guess_send_button">Send Message</button>
+  <div id="guess_history"></div>
+  <br />
+  <br />
+</div> -->
 
 </body>
 </html>
