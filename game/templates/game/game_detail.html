@@ -19,16 +19,19 @@
             <li id="greeting">Welcome, {{user.username}}</li>
         </ul>
     </div>
-<h1>Game {{ game.game_id }}</h1>
-<p>Team 1: {{ game.team1.name }}</p>
-<p>Team 2: {{ game.team2.name }}</p>
-<p>First Team: {{ game.guessers.name }}</p>
+    <div id="game-id" style="display: none;">{{ game.game_id }}</div>
+<div id="game_body">
+<div id="game_info">
+<p>{{ game.team1.name }} vs {{ game.team2.name }}</p>
+<p>Guessers: {{ game.guessers.name }}</p>
 <p>Current Artist: {{ game.current_artist.player_import.username }}</p>
+{% if game.current_artist.player_import == users %}
 <p>Current Word: {{ game.word_to_guess }}</p>
-<p>User: {{ users.username }} {{users.user_id}}</p>
-<p>Current Round: {{ game.rounds }} of out {{game.max_rounds}}</p>
-<p >Remaining Time: {{ remaining_time }}</p>
-
+{%endif%}
+<p>{{ game.rounds }} of out {{game.max_rounds}} Rounds</p>
+<p id="game-timer" >Remaining Time: {{ round_end_timestamp_ms }}</p>
+</div>
+<div id="canvas_div">
 <canvas id="active-canvas" width="1000px" height="500px" style="border:1px solid #000000;text-align: center;">
 </canvas>
 {% if game.current_artist.player_import == users %}
@@ -39,12 +42,13 @@
      
   <button id="eraser-canvas" class="tools-canvas" type="button">Eraser</button>
   <button id="pencil-canvas" class="tools-canvas" type="button">Pencil</button>
-  <!-- <button id="bucket-canvas" class="tools-canvas" type="button" onclick="fill=true;">Bucket</button> -->
   <label for="favcolor">Change Color</label>
   <input type="color" id="color-canvas" name="favcolor" value="#000000">
   <button id="clear-canvas" class="tools-canvas" type="button">Clear Canvas</button>
 </div>
 {% endif %}
+</div>
+</div>
 <!-- <div class="chat__item__container" id="id_chat_item_container" style="font-size: 20px">
   <br />
 
@@ -54,6 +58,40 @@
   <br />
   <br />
 </div> -->
+<script>
+ document.addEventListener('DOMContentLoaded', function() {
+    const timerDisplay = document.getElementById('game-timer');
+    const gameId = "{{ game.game_id }}";
+    const websocketUrl = `ws://${window.location.host}/ws/game/${gameId}/`;
+    const websocket = new WebSocket(websocketUrl);
 
+    websocket.onmessage = function(event) {
+      const data = JSON.parse(event.data);
+      if (data.type === 'timer_update') {
+        const remainingSeconds = data.remaining_seconds;
+        const minutes = Math.floor(remainingSeconds / 60);
+        const seconds = remainingSeconds % 60;
+        const formattedMinutes = String(minutes).padStart(2, '0');
+        const formattedSeconds = String(seconds).padStart(2, '0');
+        timerDisplay.textContent = `${formattedMinutes}:${formattedSeconds}`;
+        if(`${formattedMinutes}` <= 0 && `${formattedSeconds}` <=0) {
+          timerDisplay.textContent =`Time's Up`;
+        }
+      }
+    };
+
+    websocket.onopen = function(event) {
+      console.log("WebSocket connection opened");
+    };
+
+    websocket.onclose = function(event) {
+      console.log("WebSocket connection closed");
+    };
+
+    websocket.onerror = function(event) {
+      console.error("WebSocket error:", event);
+    };
+  });
+</script>
 </body>
 </html>

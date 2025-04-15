@@ -3,7 +3,7 @@
 <html>
 <head>
     <title>Create New Teams</title>
-    <link rel="stylesheet" href="{% static 'users/style.css' %}">
+    <link rel="stylesheet" href="{% static 'game/style.css' %}">
 
 </head>
 <body>
@@ -17,10 +17,13 @@
             <li id="greeting">Welcome, {{user.username}}</li>
         </ul>
     </div>
+    <div id="team_creation_message">
     {% if message %}
     <p>{{message}}</p>
     {% endif %}
+    </div>    
     {% if player.player_team is None %}
+    <div id="team_list">
     <h1>Create New Teams</h1>
     <form method="post">
         {% csrf_token %}
@@ -28,7 +31,7 @@
         <input type="text" name="team_name" id="team_name"><br><br>
         <button type="submit">Create Team</button>
     </form>
-    
+    </div>
     {% endif %}
 </body>
 </html>

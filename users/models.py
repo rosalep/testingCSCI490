@@ -85,16 +85,3 @@ class CustomUser(models.Model):
             return True
         return False
     
-
-# class Profile(models.Model):
-#     user=models.OneToOneField(CustomUser,on_delete=models.CASCADE) # user deleted, profile deleted
-#     bio = models.TextField(default='Hello, world!')
-     
-#     def __str__(self):
-#         return str(self.user)
-
-# def make_profile(sender,instance,created,**kwargs):
-#     if created:
-#         Profile.objects.create(user=instance)
-        
-# post_save.connect(make_profile,sender=CustomUser)

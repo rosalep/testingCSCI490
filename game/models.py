@@ -1,7 +1,8 @@
 from django.db import models, transaction
 from users.models import CustomUser
 from django.utils import timezone
-import datetime
+import datetime 
+from datetime import timedelta
 import random
 from django.db.models import Q
 
@@ -131,6 +132,7 @@ class GameManager(models.Manager):
         self.assign_word(game)
         self.start_round(game)
         game.save()
+        
     def end_game(self, game):
         if game.game_timer:
             game.game_timer.stop()
