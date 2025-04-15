@@ -33,6 +33,8 @@ class TeamManager(models.Manager):
         if  Player.objects.filter(player_team = team).count() < team.max_players:
             player.player_team = team
             player.save()
+            team.current_players+=1
+            team.save()
         else:
             raise ValueError(f'{team.name} is full.')
 
@@ -40,6 +42,7 @@ class Team(models.Model):
     team_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=30, unique=True)
     max_players = models.IntegerField(default=2) 
+    current_players = models.IntegerField(default=0)
     score = models.IntegerField(null=True, default=0)
     # will be the one who names team and decides what game to join
     creator = models.ForeignKey(Player, on_delete=models.CASCADE, null=True, blank=True, related_name='team_creator')

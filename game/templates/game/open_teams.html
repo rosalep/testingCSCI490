@@ -25,7 +25,16 @@
     <div id="open-teams">
         <h1>Currently Open Teams</h1>
         {% for open_team in open_teams %}
-        <p>Team {{open_team.name}} <button id="joinTeam{{open_team.team_id}}">Join</button></p>
+        <div>
+            <p>Team {{open_team.name}} </p>
+            <p>
+                
+                Capacity: {{open_team.current_players}}/{{open_team.max_players}} 
+            </p>
+            <p>
+                <button id="joinTeam{{open_team.team_id}}">Join</button>
+            </p>
+        </div>
 
         <div id="joinTeam{{open_team.team_id}}Message"></div>
         {% endfor %}
