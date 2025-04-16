@@ -33,8 +33,11 @@ def create_team(request):
         # handles saving and checking if a team is already assigned
         Team.objects.add_player(team, player)
         # send user to pick a team
-        return render(request, 'game/open_teams.html', {'player': player}) 
+        print('uhoh')
+        # return redirect('open_teams', {'player': player})
+        return render(request, 'game/create_team.html')
     return render(request, 'game/create_team.html')
+    # return render(request, 'game/open_teams.html', {'player': player}) 
 
 # contains the canvas, chat, and other game info
 # must keep track of score, rounds, artists, time remaining, and word 
@@ -59,14 +62,21 @@ def create_game(request):
         if len(full_teams) >= 2:
             team1 = random.choice(full_teams)
             full_teams.remove(team1)
-            team2 = random.choice(full_teams)
-            full_teams.remove(team2)
+            full_teams.remove(player.player_team)
             timer = Timer.objects.create()
-            game = Game.objects.create(team1=team1, team2=team2, game_timer=timer)
-            if player.player_team == team1 or player.player_team == team2:
-                return redirect('game_detail', game_id=game.game_id)
-            else:
-                return render(request, 'game/open_teams.html', {'message': 'Please wait for your team to be assigned a game.'})
+            game = Game.objects.create(team1=team1, team2=player.player_team, game_timer=timer)
+            player.player_game = game
+
+            
+            for team1_player in Player.objects.filter(player_team=team1):
+                team1_player.player_game = game
+                team1_player.save()
+
+            for player_team_player in Player.objects.filter(player_team=player.player_team):
+                player_team_player.player_game = game
+                player_team_player.save()
+
+            return redirect('game_detail', game_id=game.game_id)
         else:
             return render(request, 'game/open_teams.html', {'message': 'Not enough teams to make a game, please wait for more players to join'})
 
@@ -120,9 +130,12 @@ def leave_team(request, team_id):
     team = Team.objects.get(team_id=team_id)
     if request.method == 'POST':
         try:
-            player =  Player.objects.get(player_import=request.user, player_team=team)
+            player = Player.objects.get(player_import=request.user, player_team=team)
             if team.creator==player:
                 team.delete() # team needs to have a creator
+            else:
+                team.current_players-=1
+                team.save()
             player.player_team = None
             player.save() 
             return open_teams(request)
@@ -134,6 +147,7 @@ def leave_team(request, team_id):
 
 
 def add_player(request, team_id):
+    print("in here")
     team = (Team.objects.get)(team_id=team_id)
     player,created = Player.objects.get_or_create(player_import=request.user)
     if request.method == 'POST':

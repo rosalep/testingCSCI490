@@ -7,6 +7,7 @@
 
 </head>
 <body>
+    {% if user.is_authenticated %}
     <div id="navi" class="header">
         <ul>
             <li><a href="/">Home</a></li>
@@ -14,6 +15,9 @@
             <li><a href="/game/create_team">Create a New Team</a></li>
             <li><a href="/profile">Profile</a></li>
             <li><a href="/logout">Logout</a></li>
+            {%if player.player_game %}
+            <li><a href="/game/game/{{player.player_game.game_id}}">Your Game</a></li>
+            {%endif%}
             <li id="greeting">Welcome, {{user.username}}</li>
         </ul>
     </div>
@@ -24,7 +28,7 @@
     </div>    
     {% if player.player_team is None %}
     <div id="team_list">
-    <h1>Create New Teams</h1>
+    <h1>Create New Team</h1>
     <form method="post">
         {% csrf_token %}
         <label for="team_name">Team Name:</label><br>
@@ -33,5 +37,6 @@
     </form>
     </div>
     {% endif %}
+{%endif%}
 </body>
 </html>

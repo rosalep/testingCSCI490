@@ -12,8 +12,9 @@ class Player(models.Model):
     player_id = models.AutoField(primary_key=True)
     # renamed player to player_import
     player_import = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='game_player')
-    player_team = models.ForeignKey('Team', on_delete=models.CASCADE, null=True, blank=True, related_name='players') 
-   
+    player_team = models.ForeignKey('Team', on_delete=models.SET_NULL, null=True, blank=True, related_name='players') 
+    player_game = models.ForeignKey('Game', on_delete=models.SET_NULL, null=True, blank=True, related_name='game') 
+
 
     def __str__(self):
         return self.player_import.username

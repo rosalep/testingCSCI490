@@ -15,6 +15,9 @@
             <li><a href="/game/create_team">Create a New Team</a></li>
             <li><a href="/profile">Profile</a></li>
             <li><a href="/logout">Logout</a></li>
+            {%if player.player_game %}
+            <li><a href="/game/game/{{player.player_game.game_id}}">Your Game</a></li>
+            {%endif%}
             <li id="greeting">Welcome, {{user.username}}</li>
         </ul>
     </div>

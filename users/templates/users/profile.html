@@ -6,6 +6,7 @@
     <link rel="stylesheet" href="{% static 'users/style.css' %}">
 </head>
 <body>
+    {% if user.is_authenticated %}
     <div id="navi" class="header">
         <ul>
             <li><a href="/">Home</a></li>
@@ -13,10 +14,12 @@
             <li><a href="/game/create_team">Create a New Team</a></li>
             <li><a href="/profile">Profile</a></li>
             <li><a href="/logout">Logout</a></li>
+            {%if player.player_game %}
+            <li><a href="/game/game/{{player.player_game.game_id}}">Your Game</a></li>
+            {%endif%}
             <li id="greeting">Welcome, {{user.username}}</li>
         </ul>
     </div>
-    {% if user.is_authenticated %}
     <div class="card" >
         <div class="container">
             <h2>{{user.username}}</h2>
