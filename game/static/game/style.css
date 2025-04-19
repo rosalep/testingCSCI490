@@ -22,3 +22,32 @@
   #navi li a:hover {
     background-color: #739273;
   }
+  #game_body {
+    display: grid;
+    row-gap: 10px;
+    justify-content: center;
+    align-items: center;
+}
+  #game_info{
+    display: box;
+    text-align: center;
+
+  }
+  
+  #tools-canvas-container {
+    
+    display: box;
+    text-align: center;
+  }
+  
+  #game-timer {
+    font-size: 30px;
+  }
+
+  #open-teams, 
+  #team_list,
+  #team_creation_message, 
+  #buttons_and_message{
+    display: box;
+    text-align: center;
+  }

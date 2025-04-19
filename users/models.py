@@ -42,7 +42,7 @@ class CustomUserManager(models.Manager):
 class CustomUser(models.Model):
     user_id = models.AutoField(primary_key=True)
     username = models.CharField(max_length=30, unique=True, default='', blank=True)
-    avatar = models.ImageField(upload_to='media/', default='media/default-avatar.png', blank=True, null=True) # not needed upon creation
+    avatar = models.ImageField(upload_to='', default='default-avatar.png', blank=True, null=True) # not needed upon creation
     email = models.EmailField(max_length=255, unique=True, default='', blank=True)
     password = models.CharField(max_length=128, blank=True)
     is_staff = models.BooleanField(default=False)
@@ -85,16 +85,3 @@ class CustomUser(models.Model):
             return True
         return False
     
-
-# class Profile(models.Model):
-#     user=models.OneToOneField(CustomUser,on_delete=models.CASCADE) # user deleted, profile deleted
-#     bio = models.TextField(default='Hello, world!')
-     
-#     def __str__(self):
-#         return str(self.user)
-
-# def make_profile(sender,instance,created,**kwargs):
-#     if created:
-#         Profile.objects.create(user=instance)
-        
-# post_save.connect(make_profile,sender=CustomUser)

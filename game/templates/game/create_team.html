@@ -3,10 +3,11 @@
 <html>
 <head>
     <title>Create New Teams</title>
-    <link rel="stylesheet" href="{% static 'users/style.css' %}">
+    <link rel="stylesheet" href="{% static 'game/style.css' %}">
 
 </head>
 <body>
+    {% if user.is_authenticated %}
     <div id="navi" class="header">
         <ul>
             <li><a href="/">Home</a></li>
@@ -14,21 +15,28 @@
             <li><a href="/game/create_team">Create a New Team</a></li>
             <li><a href="/profile">Profile</a></li>
             <li><a href="/logout">Logout</a></li>
+            {%if player.player_game.is_active %}
+            <li><a href="/game/game/{{player.player_game.game_id}}">Your Game</a></li>
+            {%endif%}
             <li id="greeting">Welcome, {{user.username}}</li>
         </ul>
     </div>
+    <div id="team_creation_message">
     {% if message %}
     <p>{{message}}</p>
     {% endif %}
+    </div>    
     {% if player.player_team is None %}
-    <h1>Create New Teams</h1>
+    <div id="team_list">
+    <h1>Create New Team</h1>
     <form method="post">
         {% csrf_token %}
         <label for="team_name">Team Name:</label><br>
         <input type="text" name="team_name" id="team_name"><br><br>
         <button type="submit">Create Team</button>
     </form>
-    
+    </div>
     {% endif %}
+{%endif%}
 </body>
 </html>

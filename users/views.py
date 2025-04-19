@@ -1,13 +1,12 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
+from django.shortcuts import render, redirect
+from django.contrib.auth import authenticate, login, logout
 from django.urls import reverse
 from django.core.validators import validate_email
 from django.contrib.auth.password_validation import validate_password
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required 
 from .models import CustomUser, hash_password
-from game.models import Team, TeamManager, Game, GameManager, Player
-from django.contrib.auth.forms import PasswordChangeForm
+from game.models import Player
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 
@@ -25,6 +24,10 @@ def login_page(request):
     return render(request, 'users/login.html')
 
 def home(request):
+    # not working right
+    # if Player.objects.filter(player_import=request.user):
+    #     player = Player.objects.get(player_import=request.user)
+    #     return render(request, 'users/home.html', {'player': player})
     return render(request, 'users/home.html')
 
 def signup(request):
@@ -60,37 +63,42 @@ def logout_view(request):
     messages.success(request, "You have been successfully logged out.")
     logout(request)
     return redirect('/')  
-
+@login_required
 def profile(request):
-    return render(request, 'users/profile.html')
+    player,created = Player.objects.get_or_create(player_import=request.user)
+    return render(request, 'users/profile.html', {'player': player})
 
 @login_required
 def profileUpdate(request):
     # get user
     user = request.user
+    player,created = Player.objects.get_or_create(player_import=user)
     if request.method == 'POST':
         if 'update_profile' in request.POST: 
             try:
                 username = request.POST.get('username')
                 email = request.POST.get('email')
                 validate_email(email)
+                avatar = request.FILES.get('avatar') # check if user submitted new avatar
                 user.username = username
                 user.email = email
+                if avatar: # if false, keeps default avatar
+                    user.avatar = avatar
                 user.save()
                 login(request, user)
                 return redirect('user-profile')
             except ValidationError as e:
-                return render(request, 'users/profileUpdate.html', {'form': {'errors': str(e)}})
+                return render(request, 'users/profileUpdate.html', {'form': {'errors': str(e)}, 'player': player})
             except IntegrityError:
-                return render(request, 'users/profileUpdate.html', {'form': {'errors': 'Username or email already exists.'}})
+                return render(request, 'users/profileUpdate.html', {'form': {'errors': 'Username or email already exists.'}, 'player': player})
             except Exception as e:
-                return render(request, 'users/profileUpdate.html', {'form': {'errors': str(e)}})
+                return render(request, 'users/profileUpdate.html', {'form': {'errors': str(e)}, 'player': player})
         if 'change_password' in request.POST: 
             old_password = request.POST.get('old_password')
             password = request.POST.get('password')
             password2 = request.POST.get('password2')
             if password != password2:
-                    return render(request, 'users/profileUpdate.html', {'form': {'errors': 'Passwords do not match.'}})
+                    return render(request, 'users/profileUpdate.html', {'form': {'errors': 'Passwords do not match.'}, 'player': player})
             try:   
                 # check old password against input
                 if user.check_password(old_password):
@@ -100,11 +108,11 @@ def profileUpdate(request):
                     login(request, user)
                     return redirect('user-profile')
                 else:
-                    return render(request, 'users/profileUpdate.html',  {'form': {'errors': 'Old password is incorrect.'}})
+                    return render(request, 'users/profileUpdate.html',  {'form': {'errors': 'Old password is incorrect.'}, 'player': player})
             except ValidationError as e:
-                return render(request, 'users/profileUpdate.html', {'form': {'errors': str(e)}})
+                return render(request, 'users/profileUpdate.html', {'form': {'errors': str(e)}, 'player': player})
             except Exception as e:
-                return render(request, 'users/profileUpdate.html', {'form': {'errors': str(e)}})
+                return render(request, 'users/profileUpdate.html', {'form': {'errors': str(e)}, 'player': player})
         
 
-    return render(request, 'users/profileUpdate.html')
+    return render(request, 'users/profileUpdate.html', {'player': player})
