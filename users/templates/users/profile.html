@@ -14,7 +14,7 @@
             <li><a href="/game/create_team">Create a New Team</a></li>
             <li><a href="/profile">Profile</a></li>
             <li><a href="/logout">Logout</a></li>
-            {%if player.player_game %}
+            {%if player.player_game.is_active %}
             <li><a href="/game/game/{{player.player_game.game_id}}">Your Game</a></li>
             {%endif%}
             <li id="greeting">Welcome, {{user.username}}</li>
@@ -23,7 +23,7 @@
     <div class="card" >
         <div class="container">
             <h2>{{user.username}}</h2>
-            {% if user.avatar %}  
+           {% if user.avatar %}  
                 <img src="{{ user.avatar.url }}" id="profile-picture" alt="User Avatar">
             {% else %}
             <img src="/media/default-avatar.png" id="profile-picture" alt="Default Avatar">

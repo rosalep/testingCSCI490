@@ -1,23 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Game, Player, Team, TeamManager, Timer, GameManager
-from users.models import CustomUser
-from django.contrib import messages
+from .models import Game, Player, Team, Timer
 from asgiref.sync import sync_to_async
 from django.http import JsonResponse
 from django.core.exceptions import ValidationError
-from channels.db import database_sync_to_async
 from django.contrib.auth.decorators import login_required
-import datetime
-from django.utils import timezone
 import random
 from django.views.decorators.http import require_POST 
-# Create your views here.
-
-# # group two teams together to form a game
-# # NOT used for players to join a team
-# def join_teams(request):
-#     if request.method == 'POST':
-#         return render(request, 'game/join_teams.html')
+from datetime import timedelta
 
 # make a new team instance
 def create_team(request):
@@ -90,11 +79,15 @@ def game_detail(request, game_id):
     game = get_object_or_404(Game, game_id=game_id)
     user = request.user
     # prevents game from being restarted
-    if game.is_active == False:
+    if game.is_active == False and game.rounds != game.max_rounds:
         Game.objects.start_game(game)
-    if game.game_timer.get_remaining_time==0:
-        Game.objects.next_round(game)
+    if game.is_active == True and game.rounds == game.max_rounds:
+        Game.objects.end_game(game)
     timer = game.game_timer  
+    if game.is_active == False:
+        return redirect('open_teams')
+    if timer.get_remaining_time()==timedelta(seconds=0) and game.is_active and game.rounds < game.max_rounds:
+        Game.objects.next_round(game)
     if timer and timer.is_running and timer.end_time:
         round_end_timestamp_ms = int(timer.end_time.timestamp() * 1000)
     else:
@@ -104,7 +97,7 @@ def game_detail(request, game_id):
         'game': game,
         'users': user,
         'round_end_timestamp_ms': round_end_timestamp_ms,
-        'remaining_time': game.game_timer.get_remaining_time,
+        'remaining_time': timer.get_remaining_time,
     })
 
 
@@ -147,7 +140,6 @@ def leave_team(request, team_id):
 
 
 def add_player(request, team_id):
-    print("in here")
     team = (Team.objects.get)(team_id=team_id)
     player,created = Player.objects.get_or_create(player_import=request.user)
     if request.method == 'POST':

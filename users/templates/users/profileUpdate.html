@@ -23,7 +23,7 @@
     </div>
 
     <div id="profile_change_form">
-        <form method="post">
+        <form method="post" enctype="multipart/form-data">
             <h2>Profile Information</h2>
             {% csrf_token %}
             <input type="hidden" name="update_profile" value="1">
@@ -32,6 +32,9 @@
 
             <label for="email">Email:</label>
             <input type="email" name="email" id="email" value="{{ user.email }}"><br><br>
+
+            <label for="avatar">Avatar:</label>
+            <input type="file" name="avatar" id="avatar" value="{{ user.avatar }}"><br><br>
 
             <button type="submit">Save Profile</button>
         </form>

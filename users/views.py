@@ -1,13 +1,12 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
+from django.shortcuts import render, redirect
+from django.contrib.auth import authenticate, login, logout
 from django.urls import reverse
 from django.core.validators import validate_email
 from django.contrib.auth.password_validation import validate_password
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required 
 from .models import CustomUser, hash_password
-from game.models import Team, TeamManager, Game, GameManager, Player
-from django.contrib.auth.forms import PasswordChangeForm
+from game.models import Player
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 
@@ -80,8 +79,11 @@ def profileUpdate(request):
                 username = request.POST.get('username')
                 email = request.POST.get('email')
                 validate_email(email)
+                avatar = request.FILES.get('avatar') # check if user submitted new avatar
                 user.username = username
                 user.email = email
+                if avatar: # if false, keeps default avatar
+                    user.avatar = avatar
                 user.save()
                 login(request, user)
                 return redirect('user-profile')

@@ -2,7 +2,6 @@ from django.db import models, transaction
 from users.models import CustomUser
 from django.utils import timezone
 import datetime 
-from datetime import timedelta
 import random
 from django.db.models import Q
 
@@ -95,14 +94,6 @@ class GameManager(models.Manager):
             game.save()
         else:
             print("There are no more words available in the word bank")
-        # # many-to-many field requires __in format
-        # words = WordBank.objects.exclude(past_word__in=game.past_words.all())
-        # if words.exists(): 
-        #     game.word_to_guess = random.choice(words).word
-        #     game.past_words.add(game.word_to_guess)
-        #     game.save()
-        # else:
-        #     print("There are no more words available in the word bank")
 
     def assign_guessers(self, game):
         game.guessers = random.choice([game.team1, game.team2])
@@ -113,7 +104,6 @@ class GameManager(models.Manager):
         players = Player.objects.filter(player_team=game.guessers).exclude(
         Q(past_artists=game)  # Check if the current game is in the Player's past_artists (reverse)
     )
-        # players = Player.objects.filter(player_team=game.guessers).exclude(past_artists__in=game.past_artists.all())
         if players.exists():
             game.current_artist = random.choice(players)
             game.past_artists.add(game.current_artist)
@@ -128,8 +118,7 @@ class GameManager(models.Manager):
     def start_game(self, game):
         game.past_artists.clear()
         game.past_words.clear()
-        game.save()
-        print("cleared mtom")
+        game.save() 
         game.is_active=True # finally starts
         self.assign_guessers(game)
         self.assign_artist(game)
@@ -140,6 +129,9 @@ class GameManager(models.Manager):
     def end_game(self, game):
         if game.game_timer:
             game.game_timer.stop()
+            game.is_active=False
+            game.save()
+            print("fiunisnifowenfioew", game.is_active)
 
     def start_round(self, game):
         if game.game_timer:
@@ -150,16 +142,22 @@ class GameManager(models.Manager):
         game.save()
 
     def next_round(self, game):
-        if game.rounds < game.max_rounds:
+        print('calling next round', game.rounds)
+        if game.rounds <= game.max_rounds:
             game.rounds += 1
             self.assign_artist(game)
             self.assign_word(game)
             self.start_round(game)
             game.save()
+        else:
+            print('game over')
+            self.end_game(game)
+            game.save()
 
     def end_round(self, game):
         if game.game_timer:
             game.game_timer.stop()
+            game.save()
 
     def update_score(self, game, team_id, points):
         if game.team1.id == team_id:
@@ -179,7 +177,7 @@ class Game(models.Model):
     # to prevent certain actions after a game starts
     is_active = models.BooleanField(default=False)
     game_timer = models.OneToOneField(Timer, on_delete=models.CASCADE)
-    rounds = models.IntegerField(null=True, default=0)
+    rounds = models.IntegerField(null=True, default=1) # start on the first round, otherwise there will be 5 rounds
     max_rounds = models.IntegerField(null=True, default=4)
     max_players = models.IntegerField(null=True, default=4)
 

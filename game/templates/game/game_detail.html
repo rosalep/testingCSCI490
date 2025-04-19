@@ -1,58 +1,60 @@
 {% load static%}
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <link rel="stylesheet" href="{% static 'game/style.css' %}">
-</head>
-<body>
-    <script type="text/javascript" src="{% static 'game/drawing.js' %}"></script>
-    <div id="navi" class="header">
-        <ul>
-            <li><a href="/">Home</a></li>
-            <li><a href="/game/open_teams">Open Teams</a></li>
-            <li><a href="/game/create_team">Create a New Team</a></li>
-            <li><a href="/profile">Profile</a></li>
-            <li><a href="/logout">Logout</a></li>
-            {%if player.player_game %}
-            <li><a href="/game/game/{{player.player_game.game_id}}">Your Game</a></li>
-            {%endif%}
-            <li id="greeting">Welcome, {{user.username}}</li>
-        </ul>
-    </div>
-    <div id="game-id" style="display: none;">{{ game.game_id }}</div>
-<div id="game_body">
-<div id="game_info">
-<p>{{ game.team1.name }} vs {{ game.team2.name }}</p>
-<p>Guessers: {{ game.guessers.name }}</p>
-<p>Current Artist: {{ game.current_artist.player_import.username }}</p>
-{% if game.current_artist.player_import == users %}
-<p>Current Word: {{ game.word_to_guess }}</p>
-{%endif%}
-<p>{{ game.rounds }} of out {{game.max_rounds}} Rounds</p>
-<p id="game-timer" >Remaining Time: {{ round_end_timestamp_ms }}</p>
-</div>
-<div id="canvas_div">
-<canvas id="active-canvas" width="1000px" height="500px" style="border:1px solid #000000;text-align: center;">
-</canvas>
-{% if game.current_artist.player_import == users %}
-<div id="tools-canvas-container">
 
-    <label for="myRange">Change Size</label>
-    <input type="range" min="1" max="100" value="5" class="slider" id="myRange">
-     
-  <button id="eraser-canvas" class="tools-canvas" type="button">Eraser</button>
-  <button id="pencil-canvas" class="tools-canvas" type="button">Pencil</button>
-  <label for="favcolor">Change Color</label>
-  <input type="color" id="color-canvas" name="favcolor" value="#000000">
-  <button id="clear-canvas" class="tools-canvas" type="button">Clear Canvas</button>
-</div>
-{% endif %}
-</div>
-</div>
-<!-- <div class="chat__item__container" id="id_chat_item_container" style="font-size: 20px">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <link rel="stylesheet" href="{% static 'game/style.css' %}">
+</head>
+
+<body>
+  <script type="text/javascript" src="{% static 'game/drawing.js' %}"></script>
+  <div id="navi" class="header">
+    <ul>
+      <li><a href="/">Home</a></li>
+      <li><a href="/game/open_teams">Open Teams</a></li>
+      <li><a href="/game/create_team">Create a New Team</a></li>
+      <li><a href="/profile">Profile</a></li>
+      <li><a href="/logout">Logout</a></li>
+      {%if player.player_game.is_active %}
+      <li><a href="/game/game/{{player.player_game.game_id}}">Your Game</a></li>
+      {%endif%}
+      <li id="greeting">Welcome, {{user.username}}</li>
+    </ul>
+  </div>
+  <div id="game-id" style="display: none;">{{ game.game_id }}</div>
+  <div id="game_body">
+    <div id="game_info">
+      <p>{{ game.team1.name }} vs {{ game.team2.name }}</p>
+      <p>Guessers: {{ game.guessers.name }}</p>
+      <p>Current Artist: {{ game.current_artist.player_import.username }}</p>
+      {% if game.current_artist.player_import == users %}
+      <p>Current Word: {{ game.word_to_guess }}</p>
+      {%endif%}
+      <p>{{ game.rounds }} of out {{game.max_rounds}} Rounds</p>
+      <p id="game-timer">Remaining Time: {{ round_end_timestamp_ms }}</p>
+    </div>
+    <div id="canvas_div">
+      <canvas id="active-canvas" width="1000px" height="500px" style="border:1px solid #000000;text-align: center;">
+      </canvas>
+      {% if game.current_artist.player_import == users %}
+      <div id="tools-canvas-container">
+
+        <label for="myRange">Change Size</label>
+        <input type="range" min="1" max="100" value="5" class="slider" id="myRange">
+
+        <button id="eraser-canvas" class="tools-canvas" type="button">Eraser</button>
+        <button id="pencil-canvas" class="tools-canvas" type="button">Pencil</button>
+        <label for="favcolor">Change Color</label>
+        <input type="color" id="color-canvas" name="favcolor" value="#000000">
+        <button id="clear-canvas" class="tools-canvas" type="button">Clear Canvas</button>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  <!-- <div class="chat__item__container" id="id_chat_item_container" style="font-size: 20px">
   <br />
 
   <input type="text" id="id_guess_send_input" />
@@ -61,40 +63,49 @@
   <br />
   <br />
 </div> -->
-<script>
- document.addEventListener('DOMContentLoaded', function() {
-    const timerDisplay = document.getElementById('game-timer');
-    const gameId = "{{ game.game_id }}";
-    const websocketUrl = `ws://${window.location.host}/ws/game/${gameId}/`;
-    const websocket = new WebSocket(websocketUrl);
+  <script>
 
-    websocket.onmessage = function(event) {
-      const data = JSON.parse(event.data);
-      if (data.type === 'timer_update') {
-        const remainingSeconds = data.remaining_seconds;
-        const minutes = Math.floor(remainingSeconds / 60);
-        const seconds = remainingSeconds % 60;
-        const formattedMinutes = String(minutes).padStart(2, '0');
-        const formattedSeconds = String(seconds).padStart(2, '0');
-        timerDisplay.textContent = `${formattedMinutes}:${formattedSeconds}`;
-        if(`${formattedMinutes}` <= 0 && `${formattedSeconds}` <=0) {
-          timerDisplay.textContent =`Time's Up`;
-        }
-      }
-    };
+    document.addEventListener('DOMContentLoaded', function () {
+      const timerDisplay = document.getElementById('game-timer');
+      const gameId = "{{ game.game_id }}";
+      const round_end_time = "{{ round_end_timestamp_ms }}";
+      const websocketUrl = `ws://${window.location.host}/ws/game/${gameId}/`;
+      const websocket = new WebSocket(websocketUrl);
 
-    websocket.onopen = function(event) {
-      console.log("WebSocket connection opened");
-    };
+      websocket.onmessage = function (event) {
+        const data = JSON.parse(event.data);
+        if (data.type === 'timer_update') {
+          const remainingSeconds = data.remaining_seconds;
+          const minutes = Math.floor(remainingSeconds / 60);
+          const seconds = remainingSeconds % 60;
+          const formattedMinutes = String(minutes).padStart(2, '0');
+          const formattedSeconds = String(seconds).padStart(2, '0');
+          if (`${formattedMinutes}` <= 0 && `${formattedSeconds}` <= 0 || round_end_time == 0) {
+            timerDisplay.textContent = `Time's Up`;
+            setTimeout(function () {
+              location.reload();
+            }, 3000);
+            // location.reload();
+          }
+          else {
+            timerDisplay.textContent = `${formattedMinutes}:${formattedSeconds}`;
 
-    websocket.onclose = function(event) {
-      console.log("WebSocket connection closed");
-    };
+          }}
+        };
 
-    websocket.onerror = function(event) {
-      console.error("WebSocket error:", event);
-    };
-  });
-</script>
+        websocket.onopen = function (event) {
+          console.log("WebSocket connection opened");
+        };
+
+        websocket.onclose = function (event) {
+          console.log("WebSocket connection closed");
+        };
+
+        websocket.onerror = function (event) {
+          console.error("WebSocket error:", event);
+        };
+      });
+  </script>
 </body>
+
 </html>
