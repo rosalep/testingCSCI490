@@ -13,7 +13,7 @@ class Player(models.Model):
     player_import = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='game_player')
     player_team = models.ForeignKey('Team', on_delete=models.SET_NULL, null=True, blank=True, related_name='players') 
     player_game = models.ForeignKey('Game', on_delete=models.SET_NULL, null=True, blank=True, related_name='game') 
-
+    alltime_score = models.IntegerField(default=0)
 
     def __str__(self):
         return self.player_import.username

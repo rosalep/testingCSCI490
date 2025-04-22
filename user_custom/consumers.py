@@ -1,14 +1,10 @@
-# your_app/consumers.py
-
 import json
 import asyncio
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.utils import timezone
-from game.models import Game  # Import your Game model
-# Import your Timer model if you need to access it directly
-# from .models import Timer
+from game.models import Game  
 from channels.db import database_sync_to_async
-
+# only used to get timer 
 class GameConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.game_id = self.scope['url_route']['kwargs']['game_id']

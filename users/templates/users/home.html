@@ -18,21 +18,38 @@
             <li><a href="/game/create_team">Create a New Team</a></li>
             <li><a href="/profile">Profile</a></li>
             <li><a href="/logout">Logout</a></li>
-            {%if player.player_game %}
-            <li><a href="/game/game/{{player.player_game.game_id}}">Your Game</a></li>
+            {%if curr_player.player_game %}
+            <li><a href="/game/game/{{curr_player.player_game.game_id}}">Your Game</a></li>
             {%endif%}
             <li id="greeting">Welcome, {{user.username}}</li>
         </ul>
     </div>
-    <!-- rankings go here once there is enough data -->
-    <p>Here is where the rankings will go once teams and game are set up</p>
+    <div id="leaderboard">
+        <h1>Leaderboard</h1>
+        <table>
+            <tr id="table-legend">
+                <th>Rank</th>
+                <th>Player</th>
+                <th>Score</th>
+            </tr>
+
+            {% for p in player %}
+            <tr>
+                <td>{{forloop.counter}}</td>
+                <td>{{p.player_import__username}}</td>
+                <td> {{p.alltime_score}}</td>
+                
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
     {% else %}
     <div class="login-required" id="login-to-draw">
         <p>Oops! It seems that you are not logged in. If you would like to play, please <a class="ml-2"
-            href="/login">login</a> or <a class="ml-2"
-            href="/signup">signup</a></p>
-      </div>
+                href="/login">login</a> or <a class="ml-2" href="/signup">signup</a></p>
+    </div>
     {% endif %}
-    
+
 </body>
+
 </html>

@@ -33,7 +33,6 @@
         <div>
             <p>Team {{open_team.name}} </p>
             <p>
-                
                 Capacity: {{open_team.current_players}}/{{open_team.max_players}} 
             </p>
             <p>
@@ -45,13 +44,11 @@
         {% endfor %}
     </div>
     <div id="buttons_and_message">
-
-
         {% if player.player_team is not None %}
         <button id="leaveTeam{{player.player_team.team_id}}">Leave Team {{player.player_team.name}}</button>
         <div id="leaveTeam{{player.player_team.team_id}}Message"></div>
         {%if player.player_team.is_full and player.player_team.creator == player%}
-        <form method="post" action="{% url 'create_game' %}">
+        <form method="post" id="game-submit" action="{% url 'create_game' %}">
             {% csrf_token %}
             <button type="submit" id="createGame">Create Game</button>
         </form>
@@ -75,8 +72,6 @@
     <h1>{{message}}</h1>
     {%endif%}
     <script>
-
-
         document.addEventListener('click', function (event) {
             if (event.target.id && event.target.id.startsWith('joinTeam')) {
                 const teamId = event.target.id.replace('joinTeam', '');

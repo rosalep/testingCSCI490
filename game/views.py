@@ -55,7 +55,6 @@ def create_game(request):
             timer = Timer.objects.create()
             game = Game.objects.create(team1=team1, team2=player.player_team, game_timer=timer)
             player.player_game = game
-
             
             for team1_player in Player.objects.filter(player_team=team1):
                 team1_player.player_game = game

@@ -69,6 +69,8 @@
       const timerDisplay = document.getElementById('game-timer');
       const gameId = "{{ game.game_id }}";
       const round_end_time = "{{ round_end_timestamp_ms }}";
+      const curr_round = "{{ game.rounds }}";
+      const max_rounds = "{{ game.max_rounds }}";
       const websocketUrl = `ws://${window.location.host}/ws/game/${gameId}/`;
       const websocket = new WebSocket(websocketUrl);
 
@@ -80,8 +82,12 @@
           const seconds = remainingSeconds % 60;
           const formattedMinutes = String(minutes).padStart(2, '0');
           const formattedSeconds = String(seconds).padStart(2, '0');
+        
           if (`${formattedMinutes}` <= 0 && `${formattedSeconds}` <= 0 || round_end_time == 0) {
-            timerDisplay.textContent = `Time's Up`;
+            if(curr_round == max_rounds){
+              timerDisplay.textContent = `Game Over`;
+            }
+            else{timerDisplay.textContent = `Time's Up`;}
             setTimeout(function () {
               location.reload();
             }, 3000);
