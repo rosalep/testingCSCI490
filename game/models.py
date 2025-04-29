@@ -5,7 +5,6 @@ import datetime
 import random
 from django.db.models import Q
 
-# Create your models here.
 
 class Player(models.Model):
     player_id = models.AutoField(primary_key=True)

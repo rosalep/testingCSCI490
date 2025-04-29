@@ -74,6 +74,9 @@ def create_game(request):
         print(f"Error in create_game: {e}")
         return render(request, 'game/open_teams.html', {'message': 'An error occurred while creating the game.'})
 
+def game_chat(request, game_id):
+    return render(request, 'chat/game_chat.html', {'game_id': game_id})
+
 def game_detail(request, game_id):
     game = get_object_or_404(Game, game_id=game_id)
     user = request.user
@@ -91,12 +94,14 @@ def game_detail(request, game_id):
         round_end_timestamp_ms = int(timer.end_time.timestamp() * 1000)
     else:
         round_end_timestamp_ms = 0
-
+    player, created = Player.objects.get_or_create(player_import=user)    
+    
     return render(request, 'game/game_detail.html', {
         'game': game,
         'users': user,
         'round_end_timestamp_ms': round_end_timestamp_ms,
         'remaining_time': timer.get_remaining_time,
+        'player': player,
     })
 
 
@@ -108,7 +113,6 @@ def get_player(user):
 # show all open teams
 # allows player to join a team or leave a team
 def open_teams(request):
-    # if request.method =='POST':
     user = request.user
     player,created = Player.objects.get_or_create(player_import=user)
     teams = Team.objects.all()    

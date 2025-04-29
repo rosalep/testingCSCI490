@@ -9,7 +9,7 @@ urlpatterns = [
     path('create_team/', views.create_team, name='create_team'), # make a new team, doesn't automatically add player to it
     path('open_teams/', views.open_teams, name='open_teams'), # shows a list of open teams; click button to join
     path('leave_team/<int:team_id>/', views.leave_team, name='leave_team'), # remove player from team; no HTML
-    # path('start/<int:game_id>/', views.start_game, name='start_game'),
-    
+    path('game/<int:game_id>/chat/', views.game_chat, name='game_chat'),
+
     
 ]

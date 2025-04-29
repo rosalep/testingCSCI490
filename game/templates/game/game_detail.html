@@ -54,26 +54,69 @@
       {% endif %}
     </div>
   </div>
-  <!-- <div class="chat__item__container" id="id_chat_item_container" style="font-size: 20px">
-  <br />
-
-  <input type="text" id="id_guess_send_input" />
-  <button type="submit" id="id_guess_send_button">Send Message</button>
-  <div id="guess_history"></div>
-  <br />
-  <br />
-</div> -->
+  
+  <div id="chat-log">
+  </div>
+  <input type="text" id="message-input">
+  <button id="send-button">Send</button>
+  </div>
   <script>
-
+    
+    const gameId = "{{ game.game_id }}";
+    const chatSocket = new WebSocket('ws://127.0.0.1:8765/');
+    const chatLog = document.getElementById('chat-log');
+    const messageInput = document.getElementById('message-input');
+    const sendButton = document.getElementById('send-button');
+    const guessWord = "{{game.word_to_guess}}";
+    const playerId = "{{player.player_id}}";
     document.addEventListener('DOMContentLoaded', function () {
       const timerDisplay = document.getElementById('game-timer');
-      const gameId = "{{ game.game_id }}";
       const round_end_time = "{{ round_end_timestamp_ms }}";
       const curr_round = "{{ game.rounds }}";
       const max_rounds = "{{ game.max_rounds }}";
       const websocketUrl = `ws://${window.location.host}/ws/game/${gameId}/`;
       const websocket = new WebSocket(websocketUrl);
+      chatSocket.onopen = () => {
+        console.log('WebSocket connection opened');
+        chatSocket.send(JSON.stringify({ type: 'join_room', game_id: gameId, player_id: playerId }));
+      };
 
+      chatSocket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type === 'history' && data.messages) {
+          data.messages.forEach(msg => {
+            const messageElement = document.createElement('p');
+            messageElement.textContent = `[${msg.time_sent}] ${msg.player}: ${msg.message}`;
+            console.log("messsge: ",'${msg.message}');
+            chatLog.appendChild(messageElement);
+          });
+        } else if (data.message) {
+          const messageElement = document.createElement('p');
+          // here is where the word check is done
+          const newString = data.message.split(':')[1];
+          console.log("messsge: ", newString);
+          // -1 means there is no match
+          console.log(guessWord);
+          if(newString.search(guessWord) != -1) {
+            console.log("CORRECT");
+          }
+          messageElement.textContent = data.message;
+          chatLog.appendChild(messageElement);
+        }
+      };
+
+      chatSocket.onclose = () => {
+        console.log('WebSocket connection closed');
+      };
+
+      sendButton.onclick = () => {
+        
+        const message = messageInput.value;
+        if (message) {
+          chatSocket.send(JSON.stringify({ type: 'chat_message', game_id: gameId, message: message , player_id: playerId}));
+          messageInput.value = '';
+        }
+      };
       websocket.onmessage = function (event) {
         const data = JSON.parse(event.data);
         if (data.type === 'timer_update') {
@@ -82,12 +125,12 @@
           const seconds = remainingSeconds % 60;
           const formattedMinutes = String(minutes).padStart(2, '0');
           const formattedSeconds = String(seconds).padStart(2, '0');
-        
+
           if (`${formattedMinutes}` <= 0 && `${formattedSeconds}` <= 0 || round_end_time == 0) {
-            if(curr_round == max_rounds){
+            if (curr_round == max_rounds) {
               timerDisplay.textContent = `Game Over`;
             }
-            else{timerDisplay.textContent = `Time's Up`;}
+            else { timerDisplay.textContent = `Time's Up`; }
             setTimeout(function () {
               location.reload();
             }, 3000);
@@ -96,21 +139,22 @@
           else {
             timerDisplay.textContent = `${formattedMinutes}:${formattedSeconds}`;
 
-          }}
-        };
+          }
+        }
+      };
 
-        websocket.onopen = function (event) {
-          console.log("WebSocket connection opened");
-        };
+      websocket.onopen = function (event) {
+        console.log("WebSocket connection opened");
+      };
 
-        websocket.onclose = function (event) {
-          console.log("WebSocket connection closed");
-        };
+      websocket.onclose = function (event) {
+        console.log("WebSocket connection closed");
+      };
 
-        websocket.onerror = function (event) {
-          console.error("WebSocket error:", event);
-        };
-      });
+      websocket.onerror = function (event) {
+        console.error("WebSocket error:", event);
+      };
+    });
   </script>
 </body>
 
