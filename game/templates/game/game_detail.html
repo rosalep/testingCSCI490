@@ -28,12 +28,16 @@
   <div id="game_body">
     <div id="game_info">
       <p>{{ game.team1.name }} vs {{ game.team2.name }}</p>
+      <!-- debugging purposes -->
       <p>Guessers: {{ game.guessers.name }}</p>
       <p>Current Artist: {{ game.current_artist.player_import.username }}</p>
+
       {% if game.current_artist.player_import == users %}
       <p>Current Word: {{ game.word_to_guess }}</p>
       {%endif%}
       <p>{{ game.rounds }} of out {{game.max_rounds}} Rounds</p>
+      <p> Your Team ({{player.player_team.name}}): {{player.player_team.score}} </p>
+      <p>Opposing Team ({{other_team.name}}): {{other_team.score}}</p>
       <p id="game-timer">Remaining Time: {{ round_end_timestamp_ms }}</p>
     </div>
     <div id="canvas_div">
@@ -60,6 +64,8 @@
   <input type="text" id="message-input">
   <button id="send-button">Send</button>
   </div>
+  <!-- useful for updating elements -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
   <script>
     
     const gameId = "{{ game.game_id }}";

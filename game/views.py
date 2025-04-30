@@ -83,7 +83,7 @@ def game_detail(request, game_id):
     # prevents game from being restarted
     if game.is_active == False and game.rounds != game.max_rounds:
         Game.objects.start_game(game)
-    if game.is_active == True and game.rounds == game.max_rounds:
+    if game.is_active == True and game.rounds == game.max_rounds: # change to == if rounds go to 5
         Game.objects.end_game(game)
     timer = game.game_timer  
     if game.is_active == False:
@@ -95,13 +95,18 @@ def game_detail(request, game_id):
     else:
         round_end_timestamp_ms = 0
     player, created = Player.objects.get_or_create(player_import=user)    
-    
+    other_team = None # temp
+    if player.player_team == game.team1:
+        other_team = game.team2
+    else:
+        other_team = game.team1
     return render(request, 'game/game_detail.html', {
         'game': game,
         'users': user,
         'round_end_timestamp_ms': round_end_timestamp_ms,
         'remaining_time': timer.get_remaining_time,
         'player': player,
+        'other_team': other_team
     })
 
 

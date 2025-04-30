@@ -130,6 +130,17 @@ class GameManager(models.Manager):
             game.game_timer.stop()
             game.is_active=False
             game.save()
+            # distribute the points
+            for p1 in Player.objects.filter(player_team=game.team1):
+                p1.alltime_score+=game.team1.score
+                p1.save()
+            for p2 in Player.objects.filter(player_team=game.team2):
+                p2.alltime_score+=game.team2.score
+                p2.save()
+            # reset team points
+            game.team1.score=0
+            game.team2.score=0
+            game.save()
             print("fiunisnifowenfioew", game.is_active)
 
     def start_round(self, game):
@@ -159,10 +170,10 @@ class GameManager(models.Manager):
             game.save()
 
     def update_score(self, game, team_id, points):
-        if game.team1.id == team_id:
+        if game.team1.team_id == team_id:
             game.team1.score += points
             game.team1.save()
-        elif game.team2.id == team_id:
+        elif game.team2.team_id == team_id:
             game.team2.score += points
             game.team2.save()
         else:
