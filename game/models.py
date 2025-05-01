@@ -93,13 +93,15 @@ class GameManager(models.Manager):
             game.save()
         else:
             print("There are no more words available in the word bank")
-
+    # only used once (in start_game)
     def assign_guessers(self, game):
         game.guessers = random.choice([game.team1, game.team2])
+        print("The guessing team is: ", game.guessers.name, "\n")
         game.save()
 
+    # artists are assigned on a team basis
+    # the next team won't be selected until all artists on current team have been an artist
     def assign_artist(self, game):
-        print('in here')
         players = Player.objects.filter(player_team=game.guessers).exclude(
         Q(past_artists=game)  # Check if the current game is in the Player's past_artists (reverse)
     )
@@ -107,9 +109,13 @@ class GameManager(models.Manager):
             game.current_artist = random.choice(players)
             game.past_artists.add(game.current_artist)
             game.save()
+            print("The current artist is: ", game.current_artist.player_import.username, "\n")
         else:
+            print("No available players found. Changing guessers now.\n")
             self.change_guessers(game)
+            self.assign_artist(game)
 
+    # checks current guessers, picks the opposite team
     def change_guessers(self, game):
         game.guessers = game.team1 if game.guessers == game.team2 else game.team2
         game.save()
@@ -122,6 +128,7 @@ class GameManager(models.Manager):
         self.assign_guessers(game)
         self.assign_artist(game)
         self.assign_word(game)
+        # begins the timer
         self.start_round(game)
         game.save()
         
@@ -141,8 +148,15 @@ class GameManager(models.Manager):
             game.team1.score=0
             game.team2.score=0
             game.save()
+            t1 = Team.objects.get(team_id=game.team1.team_id)
+            t1.score = 0
+            t1.save()
+            t2 = Team.objects.get(team_id=game.team2.team_id)
+            t2.score = 0
+            t2.save()
             print("fiunisnifowenfioew", game.is_active)
 
+    # starts the timer
     def start_round(self, game):
         if game.game_timer:
             game.game_timer.start(datetime.timedelta(minutes=1))
@@ -153,7 +167,7 @@ class GameManager(models.Manager):
 
     def next_round(self, game):
         print('calling next round', game.rounds)
-        if game.rounds <= game.max_rounds:
+        if game.rounds < game.max_rounds: # removed = 
             game.rounds += 1
             self.assign_artist(game)
             self.assign_word(game)
@@ -164,6 +178,7 @@ class GameManager(models.Manager):
             self.end_game(game)
             game.save()
 
+    # ends the timer
     def end_round(self, game):
         if game.game_timer:
             game.game_timer.stop()

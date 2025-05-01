@@ -166,6 +166,7 @@ def broadcast(game_id, message, sender_socket):
                     print("got it")
                     # change score and go to next round
                     Game.objects.update_score(game, game.guessers.team_id, 1)
+                    
                     Game.objects.next_round(game)
                     print("after correct guess")
             except socket.error as e:

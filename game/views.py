@@ -83,13 +83,18 @@ def game_detail(request, game_id):
     # prevents game from being restarted
     if game.is_active == False and game.rounds != game.max_rounds:
         Game.objects.start_game(game)
-    if game.is_active == True and game.rounds == game.max_rounds: # change to == if rounds go to 5
-        Game.objects.end_game(game)
     timer = game.game_timer  
+    # the game is over 
     if game.is_active == False:
         return redirect('open_teams')
+    
+    if game.is_active == True and game.rounds >= game.max_rounds and timer.get_remaining_time()==timedelta(seconds=0): # change to == if rounds go to 5
+        Game.objects.end_game(game)
+
     if timer.get_remaining_time()==timedelta(seconds=0) and game.is_active and game.rounds < game.max_rounds:
         Game.objects.next_round(game)
+        
+
     if timer and timer.is_running and timer.end_time:
         round_end_timestamp_ms = int(timer.end_time.timestamp() * 1000)
     else:
