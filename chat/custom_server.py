@@ -1,10 +1,13 @@
 import sys
 import os
 import django
+# lets django run
+# must be put on path, otherwise it doesnt work
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 sys.path.append(os.path.dirname(project_root))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'user_custom.settings')
 django.setup()
+
 import socket
 import threading
 import json
@@ -15,12 +18,36 @@ from game.models import Player, Game
 
 CHAT_SERVER_HOST = '127.0.0.1'
 CHAT_SERVER_PORT = 8765
-CHAT_ROOMS = {}  # Dictionary to store game_id: [list_of_client_sockets]
+CHAT_ROOMS = {}  # equivalent to different games
 
+
+"""
+example client socket:
+    <socket.socket fd=9, family=2, type=1, proto=0, laddr=('127.0.0.1', 8765), raddr=('127.0.0.1', 46538)>
+
+example request data:
+    GET / HTTP/1.1
+    Host: 127.0.0.1:8765
+    Connection: Upgrade
+    Pragma: no-cache
+    Cache-Control: no-cache
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36
+    Upgrade: websocket
+    Origin: http://127.0.0.1:8000
+    Sec-WebSocket-Version: 13
+    Accept-Encoding: gzip, deflate, br, zstd
+    Accept-Language: en-US,en;q=0.9
+    Cookie: csrftoken=DTXCZosKlsWTyzR37ZfXs1Mi4W9He4Jn; sessionid=kua3byxpfs9n61fnw8hh1kddqk11ykqh
+    Sec-WebSocket-Key: TkEfLs1Lbz6NEKje+fppYA==
+    Sec-WebSocket-Extensions: permessage-deflate; client_max_window_bits
+"""
+# reference code used: https://github.com/AlexanderEllis/websocket-from-scratch/blob/main/server.py
+# HTTP handshake
 def perform_handshake(client_socket):
     try:
         request_data = client_socket.recv(4096).decode('utf-8')
         headers = {}
+        # create dictionary
         for line in request_data.split('\r\n')[1:]:
             if ': ' in line:
                 key, value = line.split(': ', 1)
@@ -31,12 +58,14 @@ def perform_handshake(client_socket):
            'sec-websocket-key' in headers and \
            'sec-websocket-version' in headers and headers['sec-websocket-version'] == '13':
 
+            # create a new key to use as accept
             sec_websocket_key = headers['sec-websocket-key']
             magic_string = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
             combined_string = sec_websocket_key + magic_string
             sha1_hash = hashlib.sha1(combined_string.encode('utf-8')).digest()
             sec_websocket_accept = base64.b64encode(sha1_hash).decode('utf-8')
 
+            # corresponding response with accept key
             response = (
                 "HTTP/1.1 101 Switching Protocols\r\n"
                 "Upgrade: websocket\r\n"
@@ -44,7 +73,9 @@ def perform_handshake(client_socket):
                 f"Sec-WebSocket-Accept: {sec_websocket_accept}\r\n"
                 "\r\n"
             ).encode('utf-8')
+
             client_socket.send(response)
+
             print(f"WebSocket handshake successful for {client_socket.getpeername()}")
             return True
         else:
@@ -53,9 +84,11 @@ def perform_handshake(client_socket):
     except Exception as e:
         print(f"Error during handshake with {client_socket.getpeername()}: {e}")
         return False
-
+    
+# Websocket frame ref: https://www.openmymind.net/WebSocket-Framing-Masking-Fragmentation-and-More/
 def handle_client(client_socket, client_address):
     print(f"New connection from {client_address}")
+    # do handshake
     if not perform_handshake(client_socket):
         client_socket.close()
         return
@@ -64,24 +97,28 @@ def handle_client(client_socket, client_address):
     current_player = None
     try:
         while True:
-            # Basic WebSocket frame reading (only for text, no masking handled for server->client)
+            # read in Websocket frame 
             header = client_socket.recv(2)
-            if not header:
+            if not header: #or len(header) < 2:
                 break
+            # bitwise used for masking
+            opcode = header[0] & 0x0F # 4 bits; 0x0F represents 15 AKA 00001111, which masks the last 4 bits
+            is_masked = (header[1] & 0x80) != 0 # 1 bit; 0x80 is 128
+            payload_len = header[1] & 0x7F # depends: 0-125, 126, 127
 
-            opcode = header[0] & 0x0F
-            is_masked = (header[1] & 0x80) != 0
-            payload_len = header[1] & 0x7F
-
+            # RFC 6455: the following 2 bytes interpreted as a 16-bit unsigned integer are the payload length
             if payload_len == 126:
                 payload_len = int.from_bytes(client_socket.recv(2), 'big')
+            # RFC 6455: the following 8 bytes interpreted as a 64-bit unsigned integer are the payload length
             elif payload_len == 127:
                 payload_len = int.from_bytes(client_socket.recv(8), 'big')
 
+            # masking key; up to 4 bytes
             mask = client_socket.recv(4) if is_masked else None
             payload = client_socket.recv(payload_len)
 
             if is_masked and mask:
+                # get each chunk
                 unmasked_payload = bytes([payload[i] ^ mask[i % 4] for i in range(payload_len)])
                 try:
                     message = json.loads(unmasked_payload.decode('utf-8'))
@@ -100,14 +137,22 @@ def handle_client(client_socket, client_address):
                             if client_socket not in CHAT_ROOMS[game_id]:
                                 CHAT_ROOMS[game_id].append(client_socket)
                             print(f"Client {client_address} (Player: {player.player_import.username}) joined room {game_id}")
+                            # give past messages 
                             send_chat_history(client_socket, game_id)
                         except Player.DoesNotExist:
                             print(f"Player ID {player_id} not found.")
+                    # share canvas data
+                    elif message_type == 'canvas_update':
+                        if current_game_id: # in a game
+                            if message['message']:
+                                # like the chat broadcast, but specifically for the canvas data
+                                # pass the sender bc we dont want to overwrite the artists' canvas
+                                broadcast_canvas_data(current_game_id, {'message':message['message'], 'type': message['type']}, client_socket)
+                    # send guesses
                     elif message_type == 'chat_message':
                         if current_game_id and 'message' in message and current_player :
-                            message = message['message']
-                            ChatMessage.objects.create(game_import=game, message_sender=current_player, message=message)
-                            broadcast(current_game_id, f"{current_player.player_import.username}: {message}", client_socket)
+                            ChatMessage.objects.create(game_import=game, message_sender=current_player, message=message['message'])
+                            broadcast(current_game_id, {'type': message_type,'player': current_player.player_import.username,  'message': message['message']})
                     elif message_type == 'leave_room':
                         if current_game_id and client_socket in CHAT_ROOMS.get(current_game_id, []):
                             CHAT_ROOMS[current_game_id].remove(client_socket)
@@ -117,9 +162,9 @@ def handle_client(client_socket, client_address):
                     print(f"Received non-JSON data from {client_address}: {unmasked_payload.decode('utf-8')}")
                 except Exception as e:
                     print(f"Error processing message from {client_address}: {e}")
-            elif opcode == 0x08:  # Connection Close
+            elif opcode == 0x08:  
                 print(f"Client {client_address} initiated closing handshake.")
-                break # Exit the loop to close the connection
+                break 
 
     except Exception as e:
         print(f"Error handling client {client_address}: {e}")
@@ -128,6 +173,7 @@ def handle_client(client_socket, client_address):
         if current_game_id and client_socket in CHAT_ROOMS.get(current_game_id, []):
             CHAT_ROOMS[current_game_id].remove(client_socket)
         client_socket.close()
+
 
 def send_chat_history(client_socket, game_id):
     try:
@@ -141,7 +187,7 @@ def send_websocket_message(client_socket, message):
     payload = message.encode('utf-8')
     length = len(payload)
     header = bytearray()
-    header.append(0x81)  # Text frame, fin bit set
+    header.append(0x81) 
 
     if length <= 125:
         header.append(length)
@@ -154,37 +200,56 @@ def send_websocket_message(client_socket, message):
 
     client_socket.send(header + payload)
 
-def broadcast(game_id, message, sender_socket):
+def broadcast_canvas_data(game_id, message, sender_socket):
+    # check that game exists
+    if game_id in CHAT_ROOMS:
+        # send data to each player in the game 
+        for client in CHAT_ROOMS[game_id]:
+            # dont include artist 
+            if client != sender_socket:
+                try:
+                    # pass the message parameters (type, message)
+                    send_websocket_message(client, json.dumps({'type': message['type'],'message': message['message']})) 
+                except socket.error as e:
+                    print(f"Socket Error in Game {game_id}: {e}")
+                except Exception as e:
+                    print(f"Exception Error: {e}")
+
+# sender_socket isnt a parameter since we want the chat messages to show up for all players
+def broadcast(game_id, message):
     if game_id in CHAT_ROOMS:
         for client in CHAT_ROOMS[game_id]:
             try:
-                send_websocket_message(client, json.dumps({'message': message}))
+                # same concept as in broadcast_canvas_data, but with new parameter 'player'
+                # 'player' keeps track of who sent the chat message
+                send_websocket_message(client, json.dumps({'message': message['message'], 'type': message['type'], 'player': message['player']}))
                 # check against game word
                 game = Game.objects.get(game_id=game_id)
-                print(message.split(":",1)[1].strip())
-                if game.word_to_guess == message.split(":",1)[1].strip():
-                    print("got it")
+                if game.word_to_guess == message['message']:
                     # change score and go to next round
                     Game.objects.update_score(game, game.guessers.team_id, 1)
-                    
                     Game.objects.next_round(game)
-                    print("after correct guess")
             except socket.error as e:
-                print(f"Error sending message to a client in room {game_id}: {e}")
+                print(f"Error sending chat in room {game_id}: {e}")
+                # disconnect on error
                 if client in CHAT_ROOMS.get(game_id, []):
                     CHAT_ROOMS[game_id].remove(client)
                     client.close()
 
 def start_server():
+    # basic server code
+    # create the socket, bind to IP and port, and keep listening
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.bind((CHAT_SERVER_HOST, CHAT_SERVER_PORT))
-    server_socket.listen(5)
+    # server_socket.listen(5)
+    server_socket.listen()
     print(f"Chat server listening on {CHAT_SERVER_HOST}:{CHAT_SERVER_PORT}")
 
+    # keep listening for connections
     while True:
         client_socket, client_address = server_socket.accept()
         client_thread = threading.Thread(target=handle_client, args=(client_socket, client_address))
-        client_thread.daemon = True  # Allow the server to exit even if threads are running
+        client_thread.daemon = True  # can run background threads
         client_thread.start()
 
 if __name__ == "__main__":

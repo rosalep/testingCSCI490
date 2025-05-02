@@ -30,7 +30,8 @@
       <p>{{ game.team1.name }} vs {{ game.team2.name }}</p>
       <!-- debugging purposes -->
       <p>Guessers: {{ game.guessers.name }}</p>
-      <p>Current Artist: {{ game.current_artist.player_import.username }}</p>
+      <p>Current Artist: {{ game.current_artist.player_import.username }}, {{ game.current_artist.player_team.name }}
+      </p>
 
       {% if game.current_artist.player_import == users %}
       <p>Current Word: {{ game.word_to_guess }}</p>
@@ -58,7 +59,7 @@
       {% endif %}
     </div>
   </div>
-  
+
   <div id="chat-log">
   </div>
   <input type="text" id="message-input">
@@ -67,7 +68,7 @@
   <!-- useful for updating elements -->
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
   <script>
-    
+
     const gameId = "{{ game.game_id }}";
     const chatSocket = new WebSocket('ws://127.0.0.1:8765/');
     const chatLog = document.getElementById('chat-log');
@@ -76,6 +77,8 @@
     const guessWord = "{{game.word_to_guess}}";
     const playerId = "{{player.player_id}}";
     document.addEventListener('DOMContentLoaded', function () {
+      const c = document.getElementById("active-canvas");
+      const ctx = c.getContext("2d");
       const timerDisplay = document.getElementById('game-timer');
       const round_end_time = "{{ round_end_timestamp_ms }}";
       const curr_round = "{{ game.rounds }}";
@@ -89,25 +92,28 @@
 
       chatSocket.onmessage = (event) => {
         const data = JSON.parse(event.data);
+        console.log("type: ", data.type);
         if (data.type === 'history' && data.messages) {
           data.messages.forEach(msg => {
             const messageElement = document.createElement('p');
             messageElement.textContent = `[${msg.time_sent}] ${msg.player}: ${msg.message}`;
-            console.log("messsge: ",'${msg.message}');
             chatLog.appendChild(messageElement);
           });
-        } else if (data.message) {
+        }
+        else if (data.type === 'canvas_update') {
+          console.log('this is canvas_update\n');
+          const drawDataURL = data.message;
+          const img = new Image();
+          img.onload = () => {
+            ctx.clearRect(0, 0, c.width, c.height);
+            ctx.drawImage(img, 0, 0);
+          };
+          img.src = drawDataURL;
+        }
+        else if (data.type=='chat_message') {
           const messageElement = document.createElement('p');
-          // here is where the word check is done
-          const newString = data.message.split(':')[1];
-          console.log("messsge: ", newString);
-          // -1 means there is no match
-          console.log(guessWord);
-          if(newString.search(guessWord) != -1) {
-            console.log("CORRECT");
-          }
-          messageElement.textContent = data.message;
-          chatLog.appendChild(messageElement);
+          messageElement.textContent = data.player + ": " + data.message;
+          chatLog.appendChild(messageElement); 
         }
       };
 
@@ -116,10 +122,10 @@
       };
 
       sendButton.onclick = () => {
-        
+
         const message = messageInput.value;
         if (message) {
-          chatSocket.send(JSON.stringify({ type: 'chat_message', game_id: gameId, message: message , player_id: playerId}));
+          chatSocket.send(JSON.stringify({ type: 'chat_message', game_id: gameId, message: message, player_id: playerId }));
           messageInput.value = '';
         }
       };

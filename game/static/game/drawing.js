@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => { // ensures HTML is loaded 
     let coordY = 0;
     let active = false;
     let eraser = false;
-    // let fill = false;
+    
     
     document.getElementById("color-canvas").onchange = colorPicker;
     document.getElementById("clear-canvas").onclick= clearCanvas;
@@ -17,6 +17,19 @@ document.addEventListener('DOMContentLoaded', () => { // ensures HTML is loaded 
     document.getElementById("myRange").onchange= changeSize;
     function clearCanvas() {
         ctx.clearRect(0, 0, c.width, c.height);
+        const canvasDataURL = c.toDataURL();
+        const message = JSON.stringify(
+            {
+                type: 'canvas_update',
+                message: canvasDataURL,
+                game_id: gameId,
+                player_id: playerId
+            }
+        );
+        console.log('beofre send');
+        chatSocket.send(message);
+        console.log("after send\n");
+
     }
     function changeEraser() {
         eraser=true;
@@ -49,6 +62,18 @@ document.addEventListener('DOMContentLoaded', () => { // ensures HTML is loaded 
             ctx.fill();
             ctx.stroke();
         }
+        const canvasDataURL = c.toDataURL();
+        const message = JSON.stringify(
+            {
+                type: 'canvas_update',
+                message: canvasDataURL,
+                game_id: gameId,
+                player_id: playerId
+            }
+        );
+        console.log('beofre send');
+        chatSocket.send(message);
+        console.log("after send\n");
     });
     c.addEventListener("mousedown", function (e) {
 
