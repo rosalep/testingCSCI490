@@ -154,7 +154,6 @@ class GameManager(models.Manager):
             t2 = Team.objects.get(team_id=game.team2.team_id)
             t2.score = 0
             t2.save()
-            print("fiunisnifowenfioew", game.is_active)
 
     # starts the timer
     def start_round(self, game):

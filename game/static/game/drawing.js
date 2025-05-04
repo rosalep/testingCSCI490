@@ -8,8 +8,7 @@ document.addEventListener('DOMContentLoaded', () => { // ensures HTML is loaded 
     let coordY = 0;
     let active = false;
     let eraser = false;
-    
-    
+        
     document.getElementById("color-canvas").onchange = colorPicker;
     document.getElementById("clear-canvas").onclick= clearCanvas;
     document.getElementById("eraser-canvas").onclick= changeEraser;
@@ -26,9 +25,7 @@ document.addEventListener('DOMContentLoaded', () => { // ensures HTML is loaded 
                 player_id: playerId
             }
         );
-        console.log('beofre send');
         chatSocket.send(message);
-        console.log("after send\n");
 
     }
     function changeEraser() {
@@ -71,9 +68,7 @@ document.addEventListener('DOMContentLoaded', () => { // ensures HTML is loaded 
                 player_id: playerId
             }
         );
-        console.log('beofre send');
         chatSocket.send(message);
-        console.log("after send\n");
     });
     c.addEventListener("mousedown", function (e) {
 
@@ -84,6 +79,8 @@ document.addEventListener('DOMContentLoaded', () => { // ensures HTML is loaded 
 
     });
 
+    // not interacting with canvas 
+    // dont need to record mouse movement
     c.addEventListener("mouseup", function (e) {
         active = false;
     });
@@ -94,26 +91,26 @@ document.addEventListener('DOMContentLoaded', () => { // ensures HTML is loaded 
 
 
     c.addEventListener("mousemove", function (e) {
-
+        // record the mouse movement
         if (active) {
             const coords = getMousePosition(c, e);
             ctx.beginPath();
+            ctx.moveTo(coordX, coordY);
+            // eraser is the same step as pencil, but with clearRect instead of lineTo
             if (eraser) {
-                ctx.moveTo(coordX, coordY);
                 ctx.clearRect(coords[0], coords[1], ctx.lineWidth, ctx.lineWidth);
-                ctx.stroke();
-                coordX = coords[0];
-                coordY = coords[1];
             }
             else {
-                ctx.moveTo(coordX, coordY);
                 ctx.lineTo(coords[0], coords[1]);
-                ctx.stroke();
-                coordX = coords[0];
-                coordY = coords[1];
             }
+            ctx.stroke();
+            coordX = coords[0];
+            coordY = coords[1];
         }
 
     });
+
+
+    
 
 });

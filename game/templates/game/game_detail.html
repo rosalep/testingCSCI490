@@ -60,8 +60,10 @@
     </div>
   </div>
 
-  <div id="chat-log">
-  </div>
+<!-- </div> -->
+ <div id="chat-div">
+  <div id="chat-log"></div>
+  
   <input type="text" id="message-input">
   <button id="send-button">Send</button>
   </div>
@@ -77,6 +79,10 @@
     const guessWord = "{{game.word_to_guess}}";
     const playerId = "{{player.player_id}}";
     document.addEventListener('DOMContentLoaded', function () {
+      // if (player.player_team != game.guessers) {
+      //   document.getElementById("message-input").style.display = "none";
+      //   document.getElementById("send-button").style.display = "none";
+      // }
       const c = document.getElementById("active-canvas");
       const ctx = c.getContext("2d");
       const timerDisplay = document.getElementById('game-timer');
@@ -93,14 +99,8 @@
       chatSocket.onmessage = (event) => {
         const data = JSON.parse(event.data);
         console.log("type: ", data.type);
-        if (data.type === 'history' && data.messages) {
-          data.messages.forEach(msg => {
-            const messageElement = document.createElement('p');
-            messageElement.textContent = `[${msg.time_sent}] ${msg.player}: ${msg.message}`;
-            chatLog.appendChild(messageElement);
-          });
-        }
-        else if (data.type === 'canvas_update') {
+      
+        if (data.type === 'canvas_update') {
           console.log('this is canvas_update\n');
           const drawDataURL = data.message;
           const img = new Image();
@@ -110,10 +110,11 @@
           };
           img.src = drawDataURL;
         }
-        else if (data.type=='chat_message') {
+        else if (data.type == 'chat_message') {
           const messageElement = document.createElement('p');
           messageElement.textContent = data.player + ": " + data.message;
-          chatLog.appendChild(messageElement); 
+          chatLog.appendChild(messageElement);
+          chatLog.scrollTop = chatLog.scrollHeight;
         }
       };
 
@@ -122,7 +123,6 @@
       };
 
       sendButton.onclick = () => {
-
         const message = messageInput.value;
         if (message) {
           chatSocket.send(JSON.stringify({ type: 'chat_message', game_id: gameId, message: message, player_id: playerId }));

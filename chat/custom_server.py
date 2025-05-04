@@ -15,6 +15,7 @@ import hashlib
 import base64
 from chat.models import ChatMessage
 from game.models import Player, Game
+from django.shortcuts import redirect
 
 CHAT_SERVER_HOST = '127.0.0.1'
 CHAT_SERVER_PORT = 8765
@@ -137,8 +138,7 @@ def handle_client(client_socket, client_address):
                             if client_socket not in CHAT_ROOMS[game_id]:
                                 CHAT_ROOMS[game_id].append(client_socket)
                             print(f"Client {client_address} (Player: {player.player_import.username}) joined room {game_id}")
-                            # give past messages 
-                            send_chat_history(client_socket, game_id)
+                           
                         except Player.DoesNotExist:
                             print(f"Player ID {player_id} not found.")
                     # share canvas data
@@ -174,14 +174,6 @@ def handle_client(client_socket, client_address):
             CHAT_ROOMS[current_game_id].remove(client_socket)
         client_socket.close()
 
-
-def send_chat_history(client_socket, game_id):
-    try:
-        history = ChatMessage.objects.filter(game_import=game_id).order_by('time_sent')[:50] # Get last 50 messages
-        history_messages = [{"player": msg.player.player_import.username, "message": msg.message, "time_sent": str(msg.time_sent)} for msg in history]
-        send_websocket_message(client_socket, json.dumps({'type': 'history', 'messages': history_messages}))
-    except Exception as e:
-        print(f"Error sending chat history for game {game_id}: {e}")
 
 def send_websocket_message(client_socket, message):
     payload = message.encode('utf-8')

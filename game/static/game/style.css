@@ -47,7 +47,26 @@
   #open-teams, 
   #team_list,
   #team_creation_message, 
-  #buttons_and_message{
+  #buttons_and_message,
+  #chat-div
+  {
     display: box;
     text-align: center;
   }
+
+  #chat-log{
+    height: 100px;
+    padding: 20 auto 20 auto;
+    margin: 2em 25vw 2em 25vw;
+    background-color: #97A497;
+    color: #253325;
+    border: 3px solid #97A497;
+    border-radius: 20px;
+    text-align: center;
+    overflow-x:auto;
+  }
+  #chat-log p:last-child {
+    color: white;
+    font-size: 25px;
+  }
+  
