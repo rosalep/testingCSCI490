@@ -22,7 +22,6 @@ def create_team(request):
         # handles saving and checking if a team is already assigned
         Team.objects.add_player(team, player)
         # send user to pick a team
-        print('uhoh')
         # return redirect('open_teams', {'player': player})
         return render(request, 'game/create_team.html')
     return render(request, 'game/create_team.html')
@@ -111,7 +110,10 @@ def game_detail(request, game_id):
         'round_end_timestamp_ms': round_end_timestamp_ms,
         'remaining_time': timer.get_remaining_time,
         'player': player,
-        'other_team': other_team
+        'other_team': other_team,
+        'word_to_guess': game.word_to_guess, # new
+        'current_round': game.rounds, # new
+        'current_artist': game.current_artist, # new
     })
 
 
@@ -168,9 +170,9 @@ def add_player(request, team_id):
             return JsonResponse({'message': f'An unexpected error occured: {str(e)}'}, status=500)
     return render(request, 'game/open_teams.html', {'open_teams': open_teams, 'player':player})
 
-def next_round(request, game_id):
-    game = get_object_or_404(Game, game_id=game_id)
-    Game.objects.end_round(game)
-    game.game_timer = Timer.objects.create()
-    Game.objects.start_round(game)
-    return redirect('game_detail', game_id=game.game_id)
+# def next_round(request, game_id):
+#     game = get_object_or_404(Game, game_id=game_id)
+#     Game.objects.end_round(game)
+#     game.game_timer = Timer.objects.create()
+#     Game.objects.start_round(game)
+#     return redirect('game_detail', game_id=game.game_id)

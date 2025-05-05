@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => { // ensures HTML is loaded 
                 player_id: playerId
             }
         );
-        chatSocket.send(message);
+        gameSocket.send(message);
 
     }
     function changeEraser() {
@@ -68,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => { // ensures HTML is loaded 
                 player_id: playerId
             }
         );
-        chatSocket.send(message);
+        gameSocket.send(message);
     });
     c.addEventListener("mousedown", function (e) {
 
@@ -88,7 +88,6 @@ document.addEventListener('DOMContentLoaded', () => { // ensures HTML is loaded 
     c.addEventListener("mouseout", function (e) {
         active = false;
     });
-
 
     c.addEventListener("mousemove", function (e) {
         // record the mouse movement

@@ -52,6 +52,7 @@
   {
     display: box;
     text-align: center;
+    font-size: 1.1vw;
   }
 
   #chat-log{
@@ -60,7 +61,7 @@
     margin: 2em 25vw 2em 25vw;
     background-color: #97A497;
     color: #253325;
-    border: 3px solid #97A497;
+    border: 2px solid #97A497;
     border-radius: 20px;
     text-align: center;
     overflow-x:auto;
@@ -70,3 +71,11 @@
     font-size: 25px;
   }
   
+  button {
+    margin-top: 10px;
+    background-color: #97A497;
+    border: 2px solid #657465;
+    border-radius: 10px;
+    font-size: 1.1vw;
+    color: white;
+  }

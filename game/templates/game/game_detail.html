@@ -29,14 +29,13 @@
     <div id="game_info">
       <p>{{ game.team1.name }} vs {{ game.team2.name }}</p>
       <!-- debugging purposes -->
-      <p>Guessers: {{ game.guessers.name }}</p>
-      <p>Current Artist: {{ game.current_artist.player_import.username }}, {{ game.current_artist.player_team.name }}
-      </p>
+      <p id="guessers">Guessers: {{ guessers }}</p>
+      <p id="current_artist">Current Artist: {{ current_artist }}</p>
 
       {% if game.current_artist.player_import == users %}
-      <p>Current Word: {{ game.word_to_guess }}</p>
+      <p id="word_to_guess">Current Word: {{ word_to_guess }}</p>
       {%endif%}
-      <p>{{ game.rounds }} of out {{game.max_rounds}} Rounds</p>
+      <p id="current_round">{{ current_round }} </p>
       <p> Your Team ({{player.player_team.name}}): {{player.player_team.score}} </p>
       <p>Opposing Team ({{other_team.name}}): {{other_team.score}}</p>
       <p id="game-timer">Remaining Time: {{ round_end_timestamp_ms }}</p>
@@ -60,29 +59,35 @@
     </div>
   </div>
 
-<!-- </div> -->
- <div id="chat-div">
-  <div id="chat-log"></div>
-  
-  <input type="text" id="message-input">
-  <button id="send-button">Send</button>
+  <div id="chat-div">
+    <div id="chat-log"></div>
+    <input type="text" id="message-input">
+    <button id="send-button">Send</button>
   </div>
   <!-- useful for updating elements -->
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
   <script>
 
     const gameId = "{{ game.game_id }}";
-    const chatSocket = new WebSocket('ws://127.0.0.1:8765/');
+    const gameSocket = new WebSocket('ws://127.0.0.1:8765/');
     const chatLog = document.getElementById('chat-log');
     const messageInput = document.getElementById('message-input');
     const sendButton = document.getElementById('send-button');
     const guessWord = "{{game.word_to_guess}}";
     const playerId = "{{player.player_id}}";
+    const player_team = "{{player.player_team}}";
+    const game_guessers = "{{game.guessers}}";
+    const current_artist = "{{current_artist}}";
+    const player = "{{player}}";
+    
     document.addEventListener('DOMContentLoaded', function () {
-      // if (player.player_team != game.guessers) {
-      //   document.getElementById("message-input").style.display = "none";
-      //   document.getElementById("send-button").style.display = "none";
-      // }
+      // only the guessing team may use the chat
+      // excludes the artist as well
+      // HOWEVER, all players can see the chat history
+      if ( player_team != game_guessers ||  player === current_artist ) {
+        document.getElementById("message-input").style.display = "none";
+        document.getElementById("send-button").style.display = "none";
+      }
       const c = document.getElementById("active-canvas");
       const ctx = c.getContext("2d");
       const timerDisplay = document.getElementById('game-timer');
@@ -91,17 +96,15 @@
       const max_rounds = "{{ game.max_rounds }}";
       const websocketUrl = `ws://${window.location.host}/ws/game/${gameId}/`;
       const websocket = new WebSocket(websocketUrl);
-      chatSocket.onopen = () => {
+      gameSocket.onopen = () => {
         console.log('WebSocket connection opened');
-        chatSocket.send(JSON.stringify({ type: 'join_room', game_id: gameId, player_id: playerId }));
+        gameSocket.send(JSON.stringify({ type: 'join_room', game_id: gameId, player_id: playerId }));
       };
 
-      chatSocket.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        console.log("type: ", data.type);
-      
+      gameSocket.onmessage = (event) => {
+        const data = JSON.parse(event.data);      
         if (data.type === 'canvas_update') {
-          console.log('this is canvas_update\n');
+          // console.log('this is canvas_update\n');
           const drawDataURL = data.message;
           const img = new Image();
           img.onload = () => {
@@ -118,14 +121,14 @@
         }
       };
 
-      chatSocket.onclose = () => {
+      gameSocket.onclose = () => {
         console.log('WebSocket connection closed');
       };
 
       sendButton.onclick = () => {
         const message = messageInput.value;
         if (message) {
-          chatSocket.send(JSON.stringify({ type: 'chat_message', game_id: gameId, message: message, player_id: playerId }));
+          gameSocket.send(JSON.stringify({ type: 'chat_message', game_id: gameId, message: message, player_id: playerId }));
           messageInput.value = '';
         }
       };
@@ -150,7 +153,11 @@
           }
           else {
             timerDisplay.textContent = `${formattedMinutes}:${formattedSeconds}`;
-
+            document.getElementById("current_artist").textContent = `Current Artist: ${String(data.current_artist)}`;
+            document.getElementById("current_round").textContent = `${String(data.rounds)} out of ${max_rounds}`;
+            document.getElementById("guessers").textContent = `Guessers: ${String(data.guessers)}`;
+            // console error, but works fine. fix later
+            document.getElementById("word_to_guess").textContent = `${String(data.word_to_guess)}`;
           }
         }
       };
