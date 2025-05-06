@@ -87,6 +87,7 @@ def perform_handshake(client_socket):
         return False
     
 # Websocket frame ref: https://www.openmymind.net/WebSocket-Framing-Masking-Fragmentation-and-More/
+# and https://stackoverflow.com/questions/78505010/how-to-properly-frame-websocket-messages-in-python-socket-library 
 def handle_client(client_socket, client_address):
     print(f"New connection from {client_address}")
     # do handshake
