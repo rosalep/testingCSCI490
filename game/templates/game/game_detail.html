@@ -28,16 +28,18 @@
   <div id="game_body">
     <div id="game_info">
       <p>{{ game.team1.name }} vs {{ game.team2.name }}</p>
-      <!-- debugging purposes -->
       <p id="guessers">Guessers: {{ guessers }}</p>
       <p id="current_artist">Current Artist: {{ current_artist }}</p>
 
-      {% if game.current_artist.player_import == users %}
       <p id="word_to_guess">Current Word: {{ word_to_guess }}</p>
-      {%endif%}
       <p id="current_round">{{ current_round }} </p>
-      <p> Your Team ({{player.player_team.name}}): {{player.player_team.score}} </p>
-      <p>Opposing Team ({{other_team.name}}): {{other_team.score}}</p>
+      {% if player.player_team == game.team1 %}
+        <p> Your Team ({{player.player_team.name}}): <span id = "team1">{{team1_points}}</span> </p>
+        <p>Opposing Team ({{other_team.name}}): <span id = "team2">{{team2_points}}</span></p>
+      {%else%}
+        <p> Your Team ({{player.player_team.name}}): <span id = "team2">{{team2_points}}</span> </p>
+        <p>Opposing Team ({{other_team.name}}): <span id = "team1">{{team1_points}}</span></p>
+      {%endif%}
       <p id="game-timer">Remaining Time: {{ round_end_timestamp_ms }}</p>
     </div>
     <div id="canvas_div">
@@ -104,7 +106,6 @@
       gameSocket.onmessage = (event) => {
         const data = JSON.parse(event.data);      
         if (data.type === 'canvas_update') {
-          // console.log('this is canvas_update\n');
           const drawDataURL = data.message;
           const img = new Image();
           img.onload = () => {
@@ -118,9 +119,27 @@
           messageElement.textContent = data.player + ": " + data.message;
           chatLog.appendChild(messageElement);
           chatLog.scrollTop = chatLog.scrollHeight;
+          
+          if (data.message.trim() == guessWord) {
+            console.log("Response OK");
+            location.reload(); // reload to get updated game info
+          }
         }
       };
-
+      function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
       gameSocket.onclose = () => {
         console.log('WebSocket connection closed');
       };
@@ -149,15 +168,23 @@
             setTimeout(function () {
               location.reload();
             }, 3000);
-            // location.reload();
+           
           }
           else {
-            timerDisplay.textContent = `${formattedMinutes}:${formattedSeconds}`;
+            
+            timerDisplay.textContent = `Remaining Time: ${formattedMinutes}:${formattedSeconds}`;
             document.getElementById("current_artist").textContent = `Current Artist: ${String(data.current_artist)}`;
             document.getElementById("current_round").textContent = `${String(data.rounds)} out of ${max_rounds}`;
             document.getElementById("guessers").textContent = `Guessers: ${String(data.guessers)}`;
+            document.getElementById("team1").textContent = `${String(data.team1_points)}`;
+            document.getElementById("team2").textContent = `${String(data.team2_points)}`;
             // console error, but works fine. fix later
-            document.getElementById("word_to_guess").textContent = `${String(data.word_to_guess)}`;
+            if ( player === current_artist) {
+              document.getElementById("word_to_guess").textContent = `${String(data.word_to_guess)}`;
+            }
+            else {
+              document.getElementById("word_to_guess").textContent = `${String(" ")}`;
+            }
           }
         }
       };

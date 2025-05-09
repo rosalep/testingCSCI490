@@ -133,6 +133,8 @@ class GameManager(models.Manager):
         game.save()
         
     def end_game(self, game):
+        if game.is_active==False:
+            return # no double calculations
         if game.game_timer:
             game.game_timer.stop()
             game.is_active=False
@@ -185,13 +187,16 @@ class GameManager(models.Manager):
 
     def update_score(self, game, team_id, points):
         if game.team1.team_id == team_id:
+            print("old score1 ", game.team1.score, " plus ", points , "\n")
             game.team1.score += points
             game.team1.save()
         elif game.team2.team_id == team_id:
+            print("old score2 ", game.team2.score, " plus ", points , "\n")
             game.team2.score += points
             game.team2.save()
         else:
             print(f"Team {game.game_id} not found")
+        print("updated score\n")
 
 class Game(models.Model):
     game_id = models.AutoField(primary_key=True)

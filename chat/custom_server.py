@@ -217,10 +217,14 @@ def broadcast(game_id, message):
                 send_websocket_message(client, json.dumps({'message': message['message'], 'type': message['type'], 'player': message['player']}))
                 # check against game word
                 game = Game.objects.get(game_id=game_id)
+
                 if game.word_to_guess == message['message']:
+                    print("\nMESSAGE CHECK\n")
                     # change score and go to next round
                     Game.objects.update_score(game, game.guessers.team_id, 1)
+                    # getting called multiple times
                     Game.objects.next_round(game)
+
             except socket.error as e:
                 print(f"Error sending chat in room {game_id}: {e}")
                 # disconnect on error

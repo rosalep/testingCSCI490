@@ -11,5 +11,6 @@ urlpatterns = [
     path('leave_team/<int:team_id>/', views.leave_team, name='leave_team'), # remove player from team; no HTML
     path('game/<int:game_id>/chat/', views.game_chat, name='game_chat'),
 
+    path('next_round/<int:game_id>/', views.next_round, name='next_round'),
     
 ]

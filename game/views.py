@@ -87,10 +87,12 @@ def game_detail(request, game_id):
     if game.is_active == False:
         return redirect('open_teams')
     
-    if game.is_active == True and game.rounds >= game.max_rounds and timer.get_remaining_time()==timedelta(seconds=0): # change to == if rounds go to 5
+    if game.is_active == True and game.rounds == game.max_rounds and timer.get_remaining_time()==timedelta(seconds=0): # change to == if rounds go to 5
+        # called when the last word is not correctly guessed
         Game.objects.end_game(game)
 
     if timer.get_remaining_time()==timedelta(seconds=0) and game.is_active and game.rounds < game.max_rounds:
+        print("inside next round from view\n")
         Game.objects.next_round(game)
         
 
@@ -170,9 +172,10 @@ def add_player(request, team_id):
             return JsonResponse({'message': f'An unexpected error occured: {str(e)}'}, status=500)
     return render(request, 'game/open_teams.html', {'open_teams': open_teams, 'player':player})
 
-# def next_round(request, game_id):
-#     game = get_object_or_404(Game, game_id=game_id)
-#     Game.objects.end_round(game)
-#     game.game_timer = Timer.objects.create()
-#     Game.objects.start_round(game)
-#     return redirect('game_detail', game_id=game.game_id)
+
+def next_round(request, game_id):
+    if request.method == 'POST':
+        game = get_object_or_404(Game, game_id=game_id)
+        Game.objects.update_score(game, game.guessers.team_id, 1)
+        Game.objects.next_round(game)
+        return redirect('game_detail', game_id=game.game_id)
