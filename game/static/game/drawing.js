@@ -16,7 +16,6 @@ document.addEventListener('DOMContentLoaded', () => { // ensures HTML is loaded 
     document.getElementById("myRange").onchange= changeSize;
     function clearCanvas() {
         ctx.clearRect(0, 0, c.width, c.height);
-        // it would be a good idea to get rid of this toDataURL completely
         const canvasDataURL = c.toDataURL();
         const message = JSON.stringify(
             {
@@ -60,19 +59,11 @@ document.addEventListener('DOMContentLoaded', () => { // ensures HTML is loaded 
             ctx.fill();
             ctx.stroke();
         }
+        const canvasDataURL = c.toDataURL();
         const message = JSON.stringify(
             {
-                type: 'canvas_update_stroke',
-                canvas_data: {
-                    x: coords[0],
-                    y: coords[1],
-                    x2: coords[0]+1,
-                    y2: coords[1]+1,
-                    size: ctx.lineWidth,
-                    erase: eraser,
-                    shape: ctx.lineCap,
-                    color: ctx.strokeStyle,
-                },
+                type: 'canvas_update',
+                message: canvasDataURL,
                 game_id: gameId,
                 player_id: playerId
             }
@@ -112,27 +103,8 @@ document.addEventListener('DOMContentLoaded', () => { // ensures HTML is loaded 
                 ctx.lineTo(coords[0], coords[1]);
             }
             ctx.stroke();
-            const message = JSON.stringify(
-            {
-                type: 'canvas_update_stroke',
-                canvas_data: {
-                    x: coordX,
-                    y: coordY,
-                    x2: coords[0],
-                    y2: coords[1],
-                    size: ctx.lineWidth,
-                    erase: eraser,
-                    shape: ctx.lineCap,
-                    color: ctx.strokeStyle,
-                },
-                game_id: gameId,
-                player_id: playerId
-            }
-            );
-            gameSocket.send(message);
             coordX = coords[0];
             coordY = coords[1];
-            
         }
 
     });

@@ -133,8 +133,8 @@ class GameManager(models.Manager):
         game.save()
         
     def end_game(self, game):
-        # if game.is_active==False:
-        #     return # no double calculations
+        if game.is_active==False:
+            return # no double calculations
         if game.game_timer:
             game.game_timer.stop()
             game.is_active=False
