@@ -101,7 +101,7 @@ def handle_client(client_socket, client_address):
         while True:
             # read in Websocket frame 
             header = client_socket.recv(2)
-            if not header: #or len(header) < 2:
+            if not header:# or len(header) < 2:
                 break
             # bitwise used for masking
             opcode = header[0] & 0x0F # 4 bits; 0x0F represents 15 AKA 00001111, which masks the last 4 bits
@@ -119,13 +119,12 @@ def handle_client(client_socket, client_address):
             mask = client_socket.recv(4) if is_masked else None
             payload = client_socket.recv(payload_len)
 
-            if is_masked and mask:
+            if is_masked and mask and opcode == 0x1:
                 # get each chunk
-                unmasked_payload = bytes([payload[i] ^ mask[i % 4] for i in range(payload_len)])
+                unmasked_payload = bytearray([payload[i] ^ mask[i % 4] for i in range(payload_len)])
                 try:
                     message = json.loads(unmasked_payload.decode('utf-8'))
                     message_type = message.get('type')
-
                     if message_type == 'join_room':
                         game_id = message.get('game_id')
                         player_id = message.get('player_id')
@@ -149,6 +148,10 @@ def handle_client(client_socket, client_address):
                                 # like the chat broadcast, but specifically for the canvas data
                                 # pass the sender bc we dont want to overwrite the artists' canvas
                                 broadcast_canvas_data(current_game_id, {'message':message['message'], 'type': message['type']}, client_socket)
+                    elif message_type == 'canvas_update_stroke':
+                        if current_game_id: # in a game
+                            if message['canvas_data']:
+                                broadcast_canvas_data_stroke(current_game_id, {'canvas_data':message['canvas_data'], 'type': message['type']}, client_socket)
                     # send guesses
                     elif message_type == 'chat_message':
                         if current_game_id and 'message' in message and current_player :
@@ -193,6 +196,21 @@ def send_websocket_message(client_socket, message):
 
     client_socket.send(header + payload)
 
+def broadcast_canvas_data_stroke(game_id, message, sender_socket):
+    # check that game exists
+    if game_id in CHAT_ROOMS:
+        # send data to each player in the game 
+        for client in CHAT_ROOMS[game_id]:
+            # dont include artist 
+            if client != sender_socket:
+                try:
+                    # pass the message parameters (type, message)
+                    send_websocket_message(client, json.dumps({'type': message['type'],'canvas_data': message['canvas_data']})) 
+                except socket.error as e:
+                    print(f"Socket Error in Game {game_id}: {e}")
+                except Exception as e:
+                    print(f"Exception Error: {e}")
+
 def broadcast_canvas_data(game_id, message, sender_socket):
     # check that game exists
     if game_id in CHAT_ROOMS:
@@ -220,7 +238,6 @@ def broadcast(game_id, message):
                 game = Game.objects.get(game_id=game_id)
 
                 if game.word_to_guess == message['message']:
-                    print("\nMESSAGE CHECK\n")
                     # change score and go to next round
                     Game.objects.update_score(game, game.guessers.team_id, 1)
                     # getting called multiple times

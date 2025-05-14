@@ -114,6 +114,28 @@
           };
           img.src = drawDataURL;
         }
+        else if (data.type === 'canvas_update_stroke') {
+          const command = data.canvas_data;
+           if (!command.erase) {
+            // case false:
+                ctx.beginPath();
+                ctx.moveTo(command.x, command.y);
+                ctx.lineTo(command.x2, command.y2);
+                ctx.lineWidth = command.size;
+                ctx.strokeStyle = command.color;
+                ctx.lineCap = command.shape;
+                ctx.stroke();
+              }
+                // break;
+            // case true:
+                else{ctx.clearRect(command.x2, command.y2 , command.size, command.size);}
+                // break;
+            // case 'draw_dot':
+            //     otherCtx.fillStyle = command.data.fillStyle;
+            //     otherCtx.fillRect(command.data.x - command.data.size / 2, command.data.y - command.data.size / 2, command.data.size, command.data.size);
+            //     break;
+            // Handle other drawing commands as needed
+        }
         else if (data.type == 'chat_message') {
           const messageElement = document.createElement('p');
           messageElement.textContent = data.player + ": " + data.message;
