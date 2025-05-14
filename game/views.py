@@ -22,7 +22,6 @@ def create_team(request):
         # handles saving and checking if a team is already assigned
         Team.objects.add_player(team, player)
         # send user to pick a team
-        print('uhoh')
         # return redirect('open_teams', {'player': player})
         return render(request, 'game/create_team.html')
     return render(request, 'game/create_team.html')
@@ -55,7 +54,6 @@ def create_game(request):
             timer = Timer.objects.create()
             game = Game.objects.create(team1=team1, team2=player.player_team, game_timer=timer)
             player.player_game = game
-
             
             for team1_player in Player.objects.filter(player_team=team1):
                 team1_player.player_game = game
@@ -75,29 +73,49 @@ def create_game(request):
         print(f"Error in create_game: {e}")
         return render(request, 'game/open_teams.html', {'message': 'An error occurred while creating the game.'})
 
+def game_chat(request, game_id):
+    return render(request, 'chat/game_chat.html', {'game_id': game_id})
+
 def game_detail(request, game_id):
     game = get_object_or_404(Game, game_id=game_id)
     user = request.user
     # prevents game from being restarted
     if game.is_active == False and game.rounds != game.max_rounds:
         Game.objects.start_game(game)
-    if game.is_active == True and game.rounds == game.max_rounds:
-        Game.objects.end_game(game)
     timer = game.game_timer  
+    # the game is over 
     if game.is_active == False:
         return redirect('open_teams')
+    
+    if game.is_active == True and game.rounds == game.max_rounds and timer.get_remaining_time()==timedelta(seconds=0): # change to == if rounds go to 5
+        # called when the last word is not correctly guessed
+        Game.objects.end_game(game)
+
     if timer.get_remaining_time()==timedelta(seconds=0) and game.is_active and game.rounds < game.max_rounds:
+        print("inside next round from view\n")
         Game.objects.next_round(game)
+        
+
     if timer and timer.is_running and timer.end_time:
         round_end_timestamp_ms = int(timer.end_time.timestamp() * 1000)
     else:
         round_end_timestamp_ms = 0
-
+    player, created = Player.objects.get_or_create(player_import=user)    
+    other_team = None # temp
+    if player.player_team == game.team1:
+        other_team = game.team2
+    else:
+        other_team = game.team1
     return render(request, 'game/game_detail.html', {
         'game': game,
         'users': user,
         'round_end_timestamp_ms': round_end_timestamp_ms,
         'remaining_time': timer.get_remaining_time,
+        'player': player,
+        'other_team': other_team,
+        'word_to_guess': game.word_to_guess, # new
+        'current_round': game.rounds, # new
+        'current_artist': game.current_artist, # new
     })
 
 
@@ -109,7 +127,6 @@ def get_player(user):
 # show all open teams
 # allows player to join a team or leave a team
 def open_teams(request):
-    # if request.method =='POST':
     user = request.user
     player,created = Player.objects.get_or_create(player_import=user)
     teams = Team.objects.all()    
@@ -155,9 +172,10 @@ def add_player(request, team_id):
             return JsonResponse({'message': f'An unexpected error occured: {str(e)}'}, status=500)
     return render(request, 'game/open_teams.html', {'open_teams': open_teams, 'player':player})
 
+
 def next_round(request, game_id):
-    game = get_object_or_404(Game, game_id=game_id)
-    Game.objects.end_round(game)
-    game.game_timer = Timer.objects.create()
-    Game.objects.start_round(game)
-    return redirect('game_detail', game_id=game.game_id)
+    if request.method == 'POST':
+        game = get_object_or_404(Game, game_id=game_id)
+        Game.objects.update_score(game, game.guessers.team_id, 1)
+        Game.objects.next_round(game)
+        return redirect('game_detail', game_id=game.game_id)

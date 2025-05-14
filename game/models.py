@@ -5,7 +5,6 @@ import datetime
 import random
 from django.db.models import Q
 
-# Create your models here.
 
 class Player(models.Model):
     player_id = models.AutoField(primary_key=True)
@@ -13,7 +12,7 @@ class Player(models.Model):
     player_import = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='game_player')
     player_team = models.ForeignKey('Team', on_delete=models.SET_NULL, null=True, blank=True, related_name='players') 
     player_game = models.ForeignKey('Game', on_delete=models.SET_NULL, null=True, blank=True, related_name='game') 
-
+    alltime_score = models.IntegerField(default=0)
 
     def __str__(self):
         return self.player_import.username
@@ -94,13 +93,15 @@ class GameManager(models.Manager):
             game.save()
         else:
             print("There are no more words available in the word bank")
-
+    # only used once (in start_game)
     def assign_guessers(self, game):
         game.guessers = random.choice([game.team1, game.team2])
+        print("The guessing team is: ", game.guessers.name, "\n")
         game.save()
 
+    # artists are assigned on a team basis
+    # the next team won't be selected until all artists on current team have been an artist
     def assign_artist(self, game):
-        print('in here')
         players = Player.objects.filter(player_team=game.guessers).exclude(
         Q(past_artists=game)  # Check if the current game is in the Player's past_artists (reverse)
     )
@@ -108,9 +109,13 @@ class GameManager(models.Manager):
             game.current_artist = random.choice(players)
             game.past_artists.add(game.current_artist)
             game.save()
+            print("The current artist is: ", game.current_artist.player_import.username, "\n")
         else:
+            print("No available players found. Changing guessers now.\n")
             self.change_guessers(game)
+            self.assign_artist(game)
 
+    # checks current guessers, picks the opposite team
     def change_guessers(self, game):
         game.guessers = game.team1 if game.guessers == game.team2 else game.team2
         game.save()
@@ -123,16 +128,36 @@ class GameManager(models.Manager):
         self.assign_guessers(game)
         self.assign_artist(game)
         self.assign_word(game)
+        # begins the timer
         self.start_round(game)
         game.save()
         
     def end_game(self, game):
+        # if game.is_active==False:
+        #     return # no double calculations
         if game.game_timer:
             game.game_timer.stop()
             game.is_active=False
             game.save()
-            print("fiunisnifowenfioew", game.is_active)
+            # distribute the points
+            for p1 in Player.objects.filter(player_team=game.team1):
+                p1.alltime_score+=game.team1.score
+                p1.save()
+            for p2 in Player.objects.filter(player_team=game.team2):
+                p2.alltime_score+=game.team2.score
+                p2.save()
+            # reset team points
+            game.team1.score=0
+            game.team2.score=0
+            game.save()
+            t1 = Team.objects.get(team_id=game.team1.team_id)
+            t1.score = 0
+            t1.save()
+            t2 = Team.objects.get(team_id=game.team2.team_id)
+            t2.score = 0
+            t2.save()
 
+    # starts the timer
     def start_round(self, game):
         if game.game_timer:
             game.game_timer.start(datetime.timedelta(minutes=1))
@@ -143,7 +168,7 @@ class GameManager(models.Manager):
 
     def next_round(self, game):
         print('calling next round', game.rounds)
-        if game.rounds <= game.max_rounds:
+        if game.rounds < game.max_rounds: # removed = 
             game.rounds += 1
             self.assign_artist(game)
             self.assign_word(game)
@@ -154,20 +179,24 @@ class GameManager(models.Manager):
             self.end_game(game)
             game.save()
 
+    # ends the timer
     def end_round(self, game):
         if game.game_timer:
             game.game_timer.stop()
             game.save()
 
     def update_score(self, game, team_id, points):
-        if game.team1.id == team_id:
+        if game.team1.team_id == team_id:
+            print("old score1 ", game.team1.score, " plus ", points , "\n")
             game.team1.score += points
             game.team1.save()
-        elif game.team2.id == team_id:
+        elif game.team2.team_id == team_id:
+            print("old score2 ", game.team2.score, " plus ", points , "\n")
             game.team2.score += points
             game.team2.save()
         else:
             print(f"Team {game.game_id} not found")
+        print("updated score\n")
 
 class Game(models.Model):
     game_id = models.AutoField(primary_key=True)

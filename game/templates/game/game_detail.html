@@ -28,12 +28,18 @@
   <div id="game_body">
     <div id="game_info">
       <p>{{ game.team1.name }} vs {{ game.team2.name }}</p>
-      <p>Guessers: {{ game.guessers.name }}</p>
-      <p>Current Artist: {{ game.current_artist.player_import.username }}</p>
-      {% if game.current_artist.player_import == users %}
-      <p>Current Word: {{ game.word_to_guess }}</p>
+      <p id="guessers">Guessers: {{ guessers }}</p>
+      <p id="current_artist">Current Artist: {{ current_artist }}</p>
+
+      <p id="word_to_guess">Current Word: {{ word_to_guess }}</p>
+      <p id="current_round">{{ current_round }} </p>
+      {% if player.player_team == game.team1 %}
+        <p> Your Team ({{player.player_team.name}}): <span id = "team1">{{team1_points}}</span> </p>
+        <p>Opposing Team ({{other_team.name}}): <span id = "team2">{{team2_points}}</span></p>
+      {%else%}
+        <p> Your Team ({{player.player_team.name}}): <span id = "team2">{{team2_points}}</span> </p>
+        <p>Opposing Team ({{other_team.name}}): <span id = "team1">{{team1_points}}</span></p>
       {%endif%}
-      <p>{{ game.rounds }} of out {{game.max_rounds}} Rounds</p>
       <p id="game-timer">Remaining Time: {{ round_end_timestamp_ms }}</p>
     </div>
     <div id="canvas_div">
@@ -54,24 +60,119 @@
       {% endif %}
     </div>
   </div>
-  <!-- <div class="chat__item__container" id="id_chat_item_container" style="font-size: 20px">
-  <br />
 
-  <input type="text" id="id_guess_send_input" />
-  <button type="submit" id="id_guess_send_button">Send Message</button>
-  <div id="guess_history"></div>
-  <br />
-  <br />
-</div> -->
+  <div id="chat-div">
+    <div id="chat-log"></div>
+    <input type="text" id="message-input">
+    <button id="send-button">Send</button>
+  </div>
+  <!-- useful for updating elements -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
   <script>
 
+    const gameId = "{{ game.game_id }}";
+    const gameSocket = new WebSocket('ws://127.0.0.1:8765/');
+    const chatLog = document.getElementById('chat-log');
+    const messageInput = document.getElementById('message-input');
+    const sendButton = document.getElementById('send-button');
+    const guessWord = "{{game.word_to_guess}}";
+    const playerId = "{{player.player_id}}";
+    const player_team = "{{player.player_team}}";
+    const game_guessers = "{{game.guessers}}";
+    const current_artist = "{{current_artist}}";
+    const player = "{{player}}";
+    
     document.addEventListener('DOMContentLoaded', function () {
+      // only the guessing team may use the chat
+      // excludes the artist as well
+      // HOWEVER, all players can see the chat history
+      if ( player_team != game_guessers ||  player === current_artist ) {
+        document.getElementById("message-input").style.display = "none";
+        document.getElementById("send-button").style.display = "none";
+      }
+      const c = document.getElementById("active-canvas");
+      const ctx = c.getContext("2d");
       const timerDisplay = document.getElementById('game-timer');
-      const gameId = "{{ game.game_id }}";
       const round_end_time = "{{ round_end_timestamp_ms }}";
+      const curr_round = "{{ game.rounds }}";
+      const max_rounds = "{{ game.max_rounds }}";
       const websocketUrl = `ws://${window.location.host}/ws/game/${gameId}/`;
       const websocket = new WebSocket(websocketUrl);
+      gameSocket.onopen = () => {
+        console.log('WebSocket connection opened');
+        gameSocket.send(JSON.stringify({ type: 'join_room', game_id: gameId, player_id: playerId }));
+      };
 
+      gameSocket.onmessage = (event) => {
+        const data = JSON.parse(event.data);      
+        if (data.type === 'canvas_update') {
+          const drawDataURL = data.message;
+          const img = new Image();
+          img.onload = () => {
+            ctx.clearRect(0, 0, c.width, c.height);
+            ctx.drawImage(img, 0, 0);
+          };
+          img.src = drawDataURL;
+        }
+        else if (data.type === 'canvas_update_stroke') {
+          const command = data.canvas_data;
+           if (!command.erase) {
+            // case false:
+                ctx.beginPath();
+                ctx.moveTo(command.x, command.y);
+                ctx.lineTo(command.x2, command.y2);
+                ctx.lineWidth = command.size;
+                ctx.strokeStyle = command.color;
+                ctx.lineCap = command.shape;
+                ctx.stroke();
+              }
+                // break;
+            // case true:
+                else{ctx.clearRect(command.x2, command.y2 , command.size, command.size);}
+                // break;
+            // case 'draw_dot':
+            //     otherCtx.fillStyle = command.data.fillStyle;
+            //     otherCtx.fillRect(command.data.x - command.data.size / 2, command.data.y - command.data.size / 2, command.data.size, command.data.size);
+            //     break;
+            // Handle other drawing commands as needed
+        }
+        else if (data.type == 'chat_message') {
+          const messageElement = document.createElement('p');
+          messageElement.textContent = data.player + ": " + data.message;
+          chatLog.appendChild(messageElement);
+          chatLog.scrollTop = chatLog.scrollHeight;
+          
+          if (data.message.trim() == guessWord) {
+            console.log("Response OK");
+            location.reload(); // reload to get updated game info
+          }
+        }
+      };
+      function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+      gameSocket.onclose = () => {
+        console.log('WebSocket connection closed');
+      };
+
+      sendButton.onclick = () => {
+        const message = messageInput.value;
+        if (message) {
+          gameSocket.send(JSON.stringify({ type: 'chat_message', game_id: gameId, message: message, player_id: playerId }));
+          messageInput.value = '';
+        }
+      };
       websocket.onmessage = function (event) {
         const data = JSON.parse(event.data);
         if (data.type === 'timer_update') {
@@ -80,31 +181,48 @@
           const seconds = remainingSeconds % 60;
           const formattedMinutes = String(minutes).padStart(2, '0');
           const formattedSeconds = String(seconds).padStart(2, '0');
+
           if (`${formattedMinutes}` <= 0 && `${formattedSeconds}` <= 0 || round_end_time == 0) {
-            timerDisplay.textContent = `Time's Up`;
+            if (curr_round == max_rounds) {
+              timerDisplay.textContent = `Game Over`;
+            }
+            else { timerDisplay.textContent = `Time's Up`; }
             setTimeout(function () {
               location.reload();
             }, 3000);
-            // location.reload();
+           
           }
           else {
-            timerDisplay.textContent = `${formattedMinutes}:${formattedSeconds}`;
+            
+            timerDisplay.textContent = `Remaining Time: ${formattedMinutes}:${formattedSeconds}`;
+            document.getElementById("current_artist").textContent = `Current Artist: ${String(data.current_artist)}`;
+            document.getElementById("current_round").textContent = `${String(data.rounds)} out of ${max_rounds}`;
+            document.getElementById("guessers").textContent = `Guessers: ${String(data.guessers)}`;
+            document.getElementById("team1").textContent = `${String(data.team1_points)}`;
+            document.getElementById("team2").textContent = `${String(data.team2_points)}`;
+            // console error, but works fine. fix later
+            if ( player === current_artist) {
+              document.getElementById("word_to_guess").textContent = `${String(data.word_to_guess)}`;
+            }
+            else {
+              document.getElementById("word_to_guess").textContent = `${String(" ")}`;
+            }
+          }
+        }
+      };
 
-          }}
-        };
+      websocket.onopen = function (event) {
+        console.log("WebSocket connection opened");
+      };
 
-        websocket.onopen = function (event) {
-          console.log("WebSocket connection opened");
-        };
+      websocket.onclose = function (event) {
+        console.log("WebSocket connection closed");
+      };
 
-        websocket.onclose = function (event) {
-          console.log("WebSocket connection closed");
-        };
-
-        websocket.onerror = function (event) {
-          console.error("WebSocket error:", event);
-        };
-      });
+      websocket.onerror = function (event) {
+        console.error("WebSocket error:", event);
+      };
+    });
   </script>
 </body>
 

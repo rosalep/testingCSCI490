@@ -4,9 +4,10 @@
   padding: 0;
   overflow: hidden;
   background-color: #97a497;
+  font-size: 1.2vw;
 }
 
-#navi li {
+#navi li{
   float: left;
 }
 
@@ -63,5 +64,41 @@
 #profile_change_form input {
   width: 100%;
   box-sizing: border-box;
+
+}
+
+#leaderboard {
+  font-size: 1.2vw;
+  display: box;
+  text-align: center;
+  
+}
+
+#leaderboard table{
+  width: 75%;
+  margin-right: auto;
+  margin-left: auto;
+  border-radius: 20px;
+  background-color:#DBD1D1;
+  border-collapse: collapse;
+ 
+}
+td {
+  width: 25%;
+  
+}
+tr {
+  border-radius: 20px;
+  margin-bottom: 1vw;
+  
+ }
+tr:nth-child(even) {
+  background-color:#d6c8c8;
+  border-radius: 20px;
+  margin-bottom: 1vw;
+} 
+#table-legend {
+  background-color: #97A497; 
+  
 
 }

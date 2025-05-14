@@ -24,11 +24,15 @@ def login_page(request):
     return render(request, 'users/login.html')
 
 def home(request):
-    # not working right
-    # if Player.objects.filter(player_import=request.user):
-    #     player = Player.objects.get(player_import=request.user)
-    #     return render(request, 'users/home.html', {'player': player})
-    return render(request, 'users/home.html')
+
+    # had problem earlier; remove if page breaks
+    if Player.objects.filter(player_import=request.user):
+        curr_player = Player.objects.get(player_import=request.user)
+
+    players = Player.objects.all().order_by('-alltime_score').values('player_import__username', 'alltime_score')
+    player = [p for p in players]
+    return render(request, 'users/home.html', {'player': player, 'curr_player': curr_player})
+    #  'curr_player': curr_player})
 
 def signup(request):
     if request.method == 'POST':
