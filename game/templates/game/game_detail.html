@@ -34,11 +34,11 @@
       <p id="word_to_guess">Current Word: {{ word_to_guess }}</p>
       <p id="current_round">{{ current_round }} </p>
       {% if player.player_team == game.team1 %}
-        <p> Your Team ({{player.player_team.name}}): <span id = "team1">{{team1_points}}</span> </p>
-        <p>Opposing Team ({{other_team.name}}): <span id = "team2">{{team2_points}}</span></p>
+      <p> Your Team ({{player.player_team.name}}): <span id="team1">{{team1_points}}</span> </p>
+      <p>Opposing Team ({{other_team.name}}): <span id="team2">{{team2_points}}</span></p>
       {%else%}
-        <p> Your Team ({{player.player_team.name}}): <span id = "team2">{{team2_points}}</span> </p>
-        <p>Opposing Team ({{other_team.name}}): <span id = "team1">{{team1_points}}</span></p>
+      <p> Your Team ({{player.player_team.name}}): <span id="team2">{{team2_points}}</span> </p>
+      <p>Opposing Team ({{other_team.name}}): <span id="team1">{{team1_points}}</span></p>
       {%endif%}
       <p id="game-timer">Remaining Time: {{ round_end_timestamp_ms }}</p>
     </div>
@@ -81,12 +81,12 @@
     const game_guessers = "{{game.guessers}}";
     const current_artist = "{{current_artist}}";
     const player = "{{player}}";
-    
+
     document.addEventListener('DOMContentLoaded', function () {
       // only the guessing team may use the chat
       // excludes the artist as well
       // HOWEVER, all players can see the chat history
-      if ( player_team != game_guessers ||  player === current_artist ) {
+      if (player_team != game_guessers || player === current_artist) {
         document.getElementById("message-input").style.display = "none";
         document.getElementById("send-button").style.display = "none";
       }
@@ -104,44 +104,30 @@
       };
 
       gameSocket.onmessage = (event) => {
-        const data = JSON.parse(event.data);      
-        if (data.type === 'canvas_update') {
-          const drawDataURL = data.message;
-          const img = new Image();
-          img.onload = () => {
-            ctx.clearRect(0, 0, c.width, c.height);
-            ctx.drawImage(img, 0, 0);
-          };
-          img.src = drawDataURL;
-        }
-        else if (data.type === 'canvas_update_stroke') {
+        const data = JSON.parse(event.data);
+        if (data.type === 'canvas_update_stroke') {
           const command = data.canvas_data;
-           if (!command.erase) {
-            // case false:
-                ctx.beginPath();
-                ctx.moveTo(command.x, command.y);
-                ctx.lineTo(command.x2, command.y2);
-                ctx.lineWidth = command.size;
-                ctx.strokeStyle = command.color;
-                ctx.lineCap = command.shape;
-                ctx.stroke();
-              }
-                // break;
-            // case true:
-                else{ctx.clearRect(command.x2, command.y2 , command.size, command.size);}
-                // break;
-            // case 'draw_dot':
-            //     otherCtx.fillStyle = command.data.fillStyle;
-            //     otherCtx.fillRect(command.data.x - command.data.size / 2, command.data.y - command.data.size / 2, command.data.size, command.data.size);
-            //     break;
-            // Handle other drawing commands as needed
+          if (!command.erase) {
+            ctx.beginPath();
+            ctx.moveTo(command.x, command.y);
+            ctx.lineTo(command.x2, command.y2);
+            ctx.lineWidth = command.size;
+            ctx.strokeStyle = command.color;
+            ctx.lineCap = command.shape;
+            ctx.stroke();
+          }
+          else { 
+            if (command.clear_canvas) {
+            ctx.clearRect(command.x, command.y, command.x2, command.y2);
+            } 
+              else {ctx.clearRect(command.x2, command.y2, command.size, command.size);} }
         }
         else if (data.type == 'chat_message') {
           const messageElement = document.createElement('p');
           messageElement.textContent = data.player + ": " + data.message;
           chatLog.appendChild(messageElement);
           chatLog.scrollTop = chatLog.scrollHeight;
-          
+
           if (data.message.trim() == guessWord) {
             console.log("Response OK");
             location.reload(); // reload to get updated game info
@@ -149,19 +135,19 @@
         }
       };
       function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
-                }
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+          const cookies = document.cookie.split(';');
+          for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+              cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+              break;
             }
-            return cookieValue;
+          }
         }
+        return cookieValue;
+      }
       gameSocket.onclose = () => {
         console.log('WebSocket connection closed');
       };
@@ -190,10 +176,10 @@
             setTimeout(function () {
               location.reload();
             }, 3000);
-           
+
           }
           else {
-            
+
             timerDisplay.textContent = `Remaining Time: ${formattedMinutes}:${formattedSeconds}`;
             document.getElementById("current_artist").textContent = `Current Artist: ${String(data.current_artist)}`;
             document.getElementById("current_round").textContent = `${String(data.rounds)} out of ${max_rounds}`;
@@ -201,7 +187,7 @@
             document.getElementById("team1").textContent = `${String(data.team1_points)}`;
             document.getElementById("team2").textContent = `${String(data.team2_points)}`;
             // console error, but works fine. fix later
-            if ( player === current_artist) {
+            if (player === current_artist) {
               document.getElementById("word_to_guess").textContent = `${String(data.word_to_guess)}`;
             }
             else {

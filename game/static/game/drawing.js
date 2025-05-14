@@ -16,12 +16,20 @@ document.addEventListener('DOMContentLoaded', () => { // ensures HTML is loaded 
     document.getElementById("myRange").onchange= changeSize;
     function clearCanvas() {
         ctx.clearRect(0, 0, c.width, c.height);
-        // it would be a good idea to get rid of this toDataURL completely
-        const canvasDataURL = c.toDataURL();
         const message = JSON.stringify(
             {
-                type: 'canvas_update',
-                message: canvasDataURL,
+                type: 'canvas_update_stroke',
+                canvas_data: {
+                    x: 0,
+                    y: 0,
+                    x2: c.width,
+                    y2: c.height,
+                    clear_canvas: true,
+                    size: ctx.lineWidth,
+                    erase: true,
+                    shape: ctx.lineCap,
+                    color: ctx.strokeStyle,
+                },
                 game_id: gameId,
                 player_id: playerId
             }
@@ -68,6 +76,7 @@ document.addEventListener('DOMContentLoaded', () => { // ensures HTML is loaded 
                     y: coords[1],
                     x2: coords[0]+1,
                     y2: coords[1]+1,
+                    clear_canvas: false,
                     size: ctx.lineWidth,
                     erase: eraser,
                     shape: ctx.lineCap,
@@ -120,6 +129,7 @@ document.addEventListener('DOMContentLoaded', () => { // ensures HTML is loaded 
                     y: coordY,
                     x2: coords[0],
                     y2: coords[1],
+                    clear_canvas: false,
                     size: ctx.lineWidth,
                     erase: eraser,
                     shape: ctx.lineCap,

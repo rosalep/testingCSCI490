@@ -142,12 +142,6 @@ def handle_client(client_socket, client_address):
                         except Player.DoesNotExist:
                             print(f"Player ID {player_id} not found.")
                     # share canvas data
-                    elif message_type == 'canvas_update':
-                        if current_game_id: # in a game
-                            if message['message']:
-                                # like the chat broadcast, but specifically for the canvas data
-                                # pass the sender bc we dont want to overwrite the artists' canvas
-                                broadcast_canvas_data(current_game_id, {'message':message['message'], 'type': message['type']}, client_socket)
                     elif message_type == 'canvas_update_stroke':
                         if current_game_id: # in a game
                             if message['canvas_data']:
@@ -211,20 +205,6 @@ def broadcast_canvas_data_stroke(game_id, message, sender_socket):
                 except Exception as e:
                     print(f"Exception Error: {e}")
 
-def broadcast_canvas_data(game_id, message, sender_socket):
-    # check that game exists
-    if game_id in CHAT_ROOMS:
-        # send data to each player in the game 
-        for client in CHAT_ROOMS[game_id]:
-            # dont include artist 
-            if client != sender_socket:
-                try:
-                    # pass the message parameters (type, message)
-                    send_websocket_message(client, json.dumps({'type': message['type'],'message': message['message']})) 
-                except socket.error as e:
-                    print(f"Socket Error in Game {game_id}: {e}")
-                except Exception as e:
-                    print(f"Exception Error: {e}")
 
 # sender_socket isnt a parameter since we want the chat messages to show up for all players
 def broadcast(game_id, message):
