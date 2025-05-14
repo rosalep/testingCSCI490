@@ -157,6 +157,7 @@ class GameManager(models.Manager):
             t2.score = 0
             t2.save()
 
+
     # starts the timer
     def start_round(self, game):
         if game.game_timer:
