@@ -22,15 +22,11 @@ def create_team(request):
         # handles saving and checking if a team is already assigned
         Team.objects.add_player(team, player)
         # send user to pick a team
-        # return redirect('open_teams', {'player': player})
         return render(request, 'game/create_team.html')
     return render(request, 'game/create_team.html')
-    # return render(request, 'game/open_teams.html', {'player': player}) 
 
 # contains the canvas, chat, and other game info
 # must keep track of score, rounds, artists, time remaining, and word 
-# def start_game(request, game_id):
-
 @require_POST
 def create_game(request):
     user = request.user
@@ -76,6 +72,7 @@ def create_game(request):
 def game_chat(request, game_id):
     return render(request, 'chat/game_chat.html', {'game_id': game_id})
 
+@login_required(login_url='/login/')
 def game_detail(request, game_id):
     game = get_object_or_404(Game, game_id=game_id)
     user = request.user
@@ -95,7 +92,6 @@ def game_detail(request, game_id):
         print("inside next round from view\n")
         Game.objects.next_round(game)
         
-
     if timer and timer.is_running and timer.end_time:
         round_end_timestamp_ms = int(timer.end_time.timestamp() * 1000)
     else:
@@ -113,9 +109,9 @@ def game_detail(request, game_id):
         'remaining_time': timer.get_remaining_time,
         'player': player,
         'other_team': other_team,
-        'word_to_guess': game.word_to_guess, # new
-        'current_round': game.rounds, # new
-        'current_artist': game.current_artist, # new
+        'word_to_guess': game.word_to_guess,
+        'current_round': game.rounds, 
+        'current_artist': game.current_artist, 
     })
 
 
@@ -135,7 +131,7 @@ def open_teams(request):
 
 # logic for leaving a team
 # if creator leaves the team, the team is deleted
-@login_required
+@login_required(login_url='/login/')
 def leave_team(request, team_id):
     team = Team.objects.get(team_id=team_id)
     if request.method == 'POST':

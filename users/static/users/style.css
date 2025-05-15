@@ -4,7 +4,6 @@
   padding: 0;
   overflow: hidden;
   background-color: #97a497;
-  font-size: 1.2vw;
 }
 
 #navi li{
@@ -101,4 +100,43 @@ tr:nth-child(even) {
   background-color: #97A497; 
   
 
+}
+#login-body, #signup-body {
+  background-color: #c4cec4 ;
+  font-size: 1.1vw;
+}
+#login-form, #signup-form {
+  text-align: center;
+  background: #ffffff;
+  color: #172217;
+  padding: .5em 1.2em;
+  border-radius: 20px;
+  margin-top: 10vh;
+  
+}
+#login-form label, 
+#signup-form label 
+{
+  display: inline-block;
+  text-align: left;
+  width: 10vw;
+}
+#login-form input, 
+#signup-form input 
+{
+  width:20vw;
+  height: 1.1vw;
+}
+#login-form button,
+#signup-form button
+{
+  margin-top: 10px;
+  background-color: #97A497;
+  border: 2px solid #657465;
+  border-radius: 10px;
+  color: white;
+  font-size: 1.1vw;
+}
+#error-message {
+  color: #d63c3c;
 }

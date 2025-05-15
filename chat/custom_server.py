@@ -15,7 +15,6 @@ import hashlib
 import base64
 from chat.models import ChatMessage
 from game.models import Player, Game
-from django.shortcuts import redirect
 
 CHAT_SERVER_HOST = '127.0.0.1'
 CHAT_SERVER_PORT = 8765
@@ -235,7 +234,6 @@ def start_server():
     # create the socket, bind to IP and port, and keep listening
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.bind((CHAT_SERVER_HOST, CHAT_SERVER_PORT))
-    # server_socket.listen(5)
     server_socket.listen()
     print(f"Chat server listening on {CHAT_SERVER_HOST}:{CHAT_SERVER_PORT}")
 

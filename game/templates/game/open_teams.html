@@ -8,6 +8,7 @@
     <title>Document</title>
     <link rel="stylesheet" href="{% static 'game/style.css' %}">
 </head>
+
 <body>
 
     {% if user.is_authenticated %}
@@ -19,11 +20,11 @@
             <li><a href="/profile">Profile</a></li>
             <li><a href="/logout">Logout</a></li>
             {%if player.player_game.is_active %}
-            
+
             <li><a href="/game/game/{{player.player_game.game_id}}">Your Game</a></li>
             {%endif%}
             <li id="greeting">Welcome, {{user.username}}</li>
-           
+
         </ul>
     </div>
 
@@ -33,7 +34,7 @@
         <div>
             <p>Team {{open_team.name}} </p>
             <p>
-                Capacity: {{open_team.current_players}}/{{open_team.max_players}} 
+                Capacity: {{open_team.current_players}}/{{open_team.max_players}}
             </p>
             <p>
                 <button id="joinTeam{{open_team.team_id}}">Join</button>
@@ -81,11 +82,10 @@
                         'X-CSRFToken': getCookie('csrftoken'),
                     }
                 })
-                .then(response => {
+                    .then(response => {
                         if (response.ok) {
                             console.log("Response OK");
                             location.reload();
-                            // window.location.href = response.url;
                         } else {
                             return response.text().then(errorMessage => {
                                 document.getElementById('createGameMessage').textContent = "oops" || "An error occurred on the server.";
@@ -111,8 +111,8 @@
                         'Content-Type': 'application/json'
                     }
                 })
-                    .then(response => 
-                    response.json())
+                    .then(response =>
+                        response.json())
                     .then(data => {
                         document.getElementById('leaveTeam' + teamId + 'Message').textContent = data.message;
                         location.reload();

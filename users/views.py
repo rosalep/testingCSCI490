@@ -11,6 +11,7 @@ from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 
 # Create your views here.
+
 def login_page(request):
     if request.method=="POST":
         username = request.POST.get('username')
@@ -23,6 +24,7 @@ def login_page(request):
             return render(request, 'users/login.html', {'form': {'errors': True}})
     return render(request, 'users/login.html')
 
+@login_required(login_url='/login/')
 def home(request):
 
     # had problem earlier; remove if page breaks
@@ -67,12 +69,13 @@ def logout_view(request):
     messages.success(request, "You have been successfully logged out.")
     logout(request)
     return redirect('/')  
-@login_required
+
+@login_required(login_url='/login/')
 def profile(request):
     player,created = Player.objects.get_or_create(player_import=request.user)
     return render(request, 'users/profile.html', {'player': player})
 
-@login_required
+@login_required(login_url='/login/')
 def profileUpdate(request):
     # get user
     user = request.user
