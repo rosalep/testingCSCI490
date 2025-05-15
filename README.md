@@ -4,8 +4,6 @@ This is a new repo that will have the same purpose as sketch-n-guess. The differ
 
 The 'master' branch is where the most recent code is.
 
-# sketch-n-guess
-
 Python 3.12.3
 Django
 virtualenv
